@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3bcc03bd08bbf5f45910f907b34fff88
+timeCreated: 1482033444
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 34497
+  packageName: Simple Military - Cartoon War
+  packageVersion: 1.3.8
+  assetPath: Assets/SimpleMilitary/Old/Prefabs/Weapons/SimpleMilitary_Rocket.prefab
+  uploadId: 794558

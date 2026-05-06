@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: afec2cc25e3439e4bb1b43e7c09f6503
+timeCreated: 1442747533
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 34497
+  packageName: Simple Military - Cartoon War
+  packageVersion: 1.3.8
+  assetPath: Assets/SimpleMilitary/Old/Models/Characters/SimpleCharacter_5.0.controller
+  uploadId: 794558

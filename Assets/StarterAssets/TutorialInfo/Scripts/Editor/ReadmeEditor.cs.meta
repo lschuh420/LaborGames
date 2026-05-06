@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: b3ca071dc3f4f8149a97155121b55045
+timeCreated: 1484146680
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 196526
+  packageName: Starter Assets - ThirdPerson | Updates in new CharacterController
+    package
+  packageVersion: 1.1.7
+  assetPath: Assets/StarterAssets/TutorialInfo/Scripts/Editor/ReadmeEditor.cs
+  uploadId: 879174
