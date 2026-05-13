@@ -2513,7 +2513,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: PlayerFollowCamera
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 3049308290382185077, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
+      propertyPath: Target.TrackingTarget
+      value: 
+      objectReference: {fileID: 511153243}
+    - target: {fileID: 3049308290382185077, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
+      propertyPath: Target.CustomLookAtTarget
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 349149586485726998, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
+    - {fileID: 4526294940682779561, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -6494,6 +6504,14 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 1304451700}
+    - target: {fileID: 8465975491859845724, guid: 330a718d621e3104b9a46d0f2212d202, type: 3}
+      propertyPath: gizmoViewMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8465975491859845724, guid: 330a718d621e3104b9a46d0f2212d202, type: 3}
+      propertyPath: showBehaviorDesignerGizmo
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8659479767695974712, guid: 330a718d621e3104b9a46d0f2212d202, type: 3}
       propertyPath: m_Mesh
       value: 
