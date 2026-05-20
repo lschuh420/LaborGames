@@ -66,7 +66,7 @@ public class PlayerShooting : MonoBehaviour
         RefreshWeaponVisibility();
         Debug.Log("Picked up: " + weaponPrefab.name + " in slot " + slot);
 
-    if (weaponIK != null)
+        if (weaponIK != null)
         {
             Transform leftHandTarget = equippedWeapons[slot].transform.Find("LeftHandTarget");
             if (leftHandTarget == null)
@@ -132,5 +132,16 @@ public class PlayerShooting : MonoBehaviour
             bulletScript.damage = damage;
             bulletScript.speed = bulletSpeed;
         }
+
+        // ====================================================================
+        // --- NEU: SOUND-MELDUNG AN DEN ROBOTER SCHICKEN ---
+        // ====================================================================
+        MechSensor robotSensor = FindObjectOfType<MechSensor>();
+        if (robotSensor != null)
+        {
+            // Schickt die aktuelle Position des Spielers an das Gehör des Roboters
+            robotSensor.HearNoise(transform.position);
+        }
+        // ====================================================================
     }
 }
