@@ -1743,7 +1743,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0390b0d792604e8abf775e8c653ae94, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponHolder: {fileID: 0}
+  equippedWeapons:
+  - {fileID: 0}
+  - {fileID: 0}
+  activeSlot: 0
+  rightHandHolder: {fileID: 0}
+  bulletPrefab: {fileID: 0}
+  bulletSpeed: 40
   shootDistance: 100
 --- !u!114 &2868979924134789379
 MonoBehaviour:
