@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -22,6 +22,7 @@ public class StepManager : MonoBehaviour
         public Vector3 restPositionOffset;
         public Transform targetTransform;
         public bool isSteppingActive;
+        public bool isDestroyed; // NEU: Bein-Zerstörung
         public float lastStepTime;
         public float currentUrgency;
     }
@@ -108,6 +109,20 @@ public class StepManager : MonoBehaviour
         if (targetsContainer == null) targetsContainer = GameObject.Find("IK_Targets_Container")?.transform;
     }
 
+    // NEU: Methode um ein Bein zu deaktivieren
+    public void ReportLegDestroyed(Transform destroyedLegRoot)
+    {
+        foreach (var leg in legs)
+        {
+            if (leg.legRoot == destroyedLegRoot)
+            {
+                leg.isDestroyed = true;
+                Debug.Log($"<color=red>[StepManager] Bein {leg.name} als zerstört markiert.</color>");
+                break;
+            }
+        }
+    }
+
     void SnapAllLegsToGround()
     {
         for (int i = 0; i < legs.Count; i++)
@@ -143,7 +158,7 @@ public class StepManager : MonoBehaviour
         float maxDist = 0f;
         for (int i = 0; i < legs.Count; i++)
         {
-            if (legs[i].isSteppingActive)
+            if (legs[i].isSteppingActive || legs[i].isDestroyed) // Zerstörte Beine ignorieren
             {
                 legs[i].currentUrgency = 0f;
                 continue;
@@ -163,7 +178,7 @@ public class StepManager : MonoBehaviour
     {
         for (int i = 0; i < legs.Count; i++)
         {
-            if (legs[i].isSteppingActive) continue;
+            if (legs[i].isSteppingActive || legs[i].isDestroyed) continue;
             Vector3 idealRest = GetIdealRestPosition(i);
 
             if (GetPlanarDistance(legs[i].targetTransform.position, idealRest) > panicDistance)
@@ -212,7 +227,7 @@ public class StepManager : MonoBehaviour
 
         foreach (int legIndex in legsInCurrentStep)
         {
-            if (legs[legIndex].isSteppingActive) continue;
+            if (legs[legIndex].isSteppingActive || legs[legIndex].isDestroyed) continue; // Zerstört? Skip.
 
             if (legs[legIndex].currentUrgency > stepThreshold)
             {
@@ -225,7 +240,7 @@ public class StepManager : MonoBehaviour
         {
             foreach (int legIndex in legsInCurrentStep)
             {
-                if (!legs[legIndex].isSteppingActive)
+                if (!legs[legIndex].isSteppingActive && !legs[legIndex].isDestroyed) // Nur gesunde Beine
                 {
                     CalculateNextStepTarget(legIndex, out Vector3 nextPos, out Quaternion nextRot);
                     TryExecuteStep(legIndex, nextPos, nextRot);
@@ -240,6 +255,7 @@ public class StepManager : MonoBehaviour
     bool TryExecuteStep(int legIndex, Vector3 stepPos, Quaternion stepRot)
     {
         LegStepData leg = legs[legIndex];
+        if (leg.isDestroyed) return false;
 
         float distance = Vector3.Distance(leg.targetTransform.position, stepPos);
         float dynamicDuration = Mathf.Clamp(distance / stepSpeed, minStepDuration, maxStepDuration);
@@ -255,15 +271,11 @@ public class StepManager : MonoBehaviour
     {
         Vector3 planarVel = new Vector3(smoothedVel.x, 0f, smoothedVel.z);
 
-        // --- DIE PROFI-LÖSUNG: Asymmetrische Prädiktion ---
         float currentPrediction = predictionSeconds;
-
-        // Index 0 = FL (Vorne Links), Index 3 = FR (Vorne Rechts)
         if (legIndex == 0 || legIndex == 3)
         {
             currentPrediction *= frontLegReachMultiplier;
         }
-        // --------------------------------------------------
 
         Vector3 futureBodyPos = transform.position + (planarVel * currentPrediction);
 
@@ -306,5 +318,5 @@ public class StepManager : MonoBehaviour
         }
     }
 
-    int GetActiveStepCount() { int c = 0; foreach (var l in legs) if (l.isSteppingActive) c++; return c; }
+    int GetActiveStepCount() { int c = 0; foreach (var l in legs) if (l.isSteppingActive && !l.isDestroyed) c++; return c; }
 }

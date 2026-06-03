@@ -16,23 +16,27 @@ public class RobotCombatMaster : Action
     public LayerMask obstacleLayer;
 
     private NavMeshAgent agent;
+    private MechBossHealth bossHealth; // Referenz f√ºr Stun/Limp Check
     private MechDefenseField defenseField;
     private MechWeapon[] weapons;
     private TurretController turret;
 
     // Unsere kugelsicheren Speicher-Variablen
-    private int currentState = 0; // 0 = Jagen/Schieﬂen, 1 = Aufladen, 2 = Nova explodiert (Cooldown)
+    private int currentState = 0; // 0 = Jagen/Schie√üen, 1 = Aufladen, 2 = Nova explodiert (Cooldown)
     private float nextActionTime = 0f;
+    private float originalAgentSpeed;
+    private bool speedReduced = false;
 
     public override void OnAwake()
     {
         agent = Owner.GetComponent<NavMeshAgent>();
+        bossHealth = Owner.GetComponent<MechBossHealth>();
         defenseField = Owner.GetComponentInChildren<MechDefenseField>();
         weapons = Owner.GetComponentsInChildren<MechWeapon>();
         turret = Owner.GetComponentInChildren<TurretController>();
-    }
 
-    // OnStart WURDE ABSICHTLICH GEL÷SCHT, DAMIT DER TIMER NICHT MEHR RESETTET WIRD!
+        if (agent != null) originalAgentSpeed = agent.speed;
+    }
 
     public override TaskStatus OnUpdate()
     {
@@ -40,13 +44,26 @@ public class RobotCombatMaster : Action
         float distance = Vector3.Distance(Owner.transform.position, targetEntity.Value.transform.position);
 
         // --------------------------------------------------------
-        // ZUSTAND 1 & 2: WARTEN (Aufladen oder Cooldown l‰uft)
+        // CHECK: CRITICAL STATE (Limping)
+        // --------------------------------------------------------
+        if (bossHealth != null && bossHealth.IsLimping && !speedReduced)
+        {
+            if (agent != null)
+            {
+                agent.speed = originalAgentSpeed * 0.4f; // 60% langsamer
+                speedReduced = true;
+                Debug.Log("<color=red>[RobotMaster] Mech humpelt! Speed reduziert.</color>");
+            }
+        }
+
+        // --------------------------------------------------------
+        // ZUSTAND 1 & 2: WARTEN (Aufladen oder Cooldown l√§uft)
         // --------------------------------------------------------
         if (currentState == 1 || currentState == 2)
         {
             if (Time.time < nextActionTime)
             {
-                // Zeit l‰uft noch ab...
+                // Zeit l√§uft noch ab...
                 if (agent != null) agent.isStopped = true;
                 if (turret != null) turret.target = null;
                 return TaskStatus.Running;
@@ -56,7 +73,7 @@ public class RobotCombatMaster : Action
                 // Timer ist fertig!
                 if (currentState == 1)
                 {
-                    // Aufladen fertig -> NOVA Z‹NDEN!
+                    // Aufladen fertig -> NOVA Z√úNDEN!
                     if (defenseField != null) defenseField.TriggerField();
 
                     // Direkt in den Cooldown wechseln
@@ -77,7 +94,7 @@ public class RobotCombatMaster : Action
         // --------------------------------------------------------
         if (currentState == 0)
         {
-            // Wenn Spieler in Reichweite -> AUFLADEN STARTEN!
+            // Wenn Spieler in Reichweite -> AUFLADEN STARTEN! (Auch im Stun m√∂glich!)
             if (distance <= meleeRange)
             {
                 Debug.Log("<color=orange>[RobotMaster] Spieler zu nah! Lade Nova auf...</color>");
@@ -89,17 +106,23 @@ public class RobotCombatMaster : Action
                 return TaskStatus.Running;
             }
 
-            // Ansonsten: Jagen
+            // STUN CHECK: Bewegung stoppen, aber Schie√üen/Zielen bleibt!
+            bool isStunned = bossHealth != null && bossHealth.IsStunned;
+
+            // Ansonsten: Jagen (nur wenn nicht gestunned)
             if (agent != null)
             {
-                agent.isStopped = false;
-                agent.SetDestination(targetEntity.Value.transform.position);
+                agent.isStopped = isStunned;
+                if (!isStunned)
+                {
+                    agent.SetDestination(targetEntity.Value.transform.position);
+                }
             }
 
             // Turm zielen lassen
             if (turret != null) turret.target = targetEntity.Value.transform;
 
-            // Schieﬂen (mit Sicht-Check)
+            // Schie√üen (mit Sicht-Check)
             Vector3 targetPos = targetEntity.Value.transform.position + Vector3.up * 1.0f;
             Vector3 startPos = eyesPivot != null ? eyesPivot.position : Owner.transform.position + Vector3.up * 1.5f;
 

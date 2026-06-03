@@ -5,6 +5,7 @@ public class BodyAdaptation : MonoBehaviour
 {
     [Header("Leg References")]
     [SerializeField] private List<Transform> footTips = new List<Transform>();
+    private bool[] destroyedFeet; // NEU: Tracker f√ºr zerst√∂rte Beine
 
     [Header("Body Height (Anpassen!)")]
     [SerializeField] private float baseBodyHeight = 0.6f;
@@ -24,7 +25,7 @@ public class BodyAdaptation : MonoBehaviour
 
     [Header("Zwingende Zuweisung!")]
     [Tooltip("Ziehe hier das Objekt rein, auf dem der NavMeshAgent liegt (Robot_Root)")]
-    public Transform rootTransform; // Die Lˆsung des Problems!
+    public Transform rootTransform;
 
     private float verticalOffset;
     private float verticalVelocity;
@@ -32,11 +33,24 @@ public class BodyAdaptation : MonoBehaviour
     private float smoothedBaseY;
     private float baseYVel;
 
+    // NEU: Methode um ein Bein f√ºr die Anpassung zu deaktivieren
+    public void ReportFootDestroyed(Transform footTip)
+    {
+        for (int i = 0; i < footTips.Count; i++)
+        {
+            if (footTips[i] == footTip)
+            {
+                destroyedFeet[i] = true;
+                Debug.Log($"<color=red>[BodyAdaptation] Fu√ü {i} wird ignoriert.</color>");
+                break;
+            }
+        }
+    }
+
     void Start()
     {
-        // rootTransform = transform.root; <--- GELOESCHT! Damit er nicht mehr das "Player" Objekt nimmt.
-
         FindFootTips();
+        destroyedFeet = new bool[footTips.Count]; // Initialisieren
         smoothedBaseY = transform.position.y;
 
         if (rootTransform != null)
@@ -46,7 +60,7 @@ public class BodyAdaptation : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[BodyAdaptation] ACHTUNG: Du musst den 'Robot_Root' im Inspector zuweisen, sonst dreht sich der Kˆrper nicht!");
+            Debug.LogError("[BodyAdaptation] ACHTUNG: Du musst den 'Robot_Root' im Inspector zuweisen, sonst dreht sich der K√∂rper nicht!");
         }
     }
 
@@ -79,6 +93,7 @@ public class BodyAdaptation : MonoBehaviour
 
     void AdaptBodyHeight()
     {
+        // Wir nehmen alle verf√ºgbaren Beine
         Vector3 avgFootPos = GetAverageFootPos(new int[] { 0, 1, 2, 3, 4, 5 });
         float targetBodyY = avgFootPos.y + baseBodyHeight;
         smoothedBaseY = Mathf.SmoothDamp(smoothedBaseY, targetBodyY, ref baseYVel, heightSmoothTime);
@@ -89,54 +104,55 @@ public class BodyAdaptation : MonoBehaviour
 
     void AdaptBodyRotation()
     {
-        // Sicherstellen, dass das Skript nicht abst¸rzt, falls das Root-Objekt fehlt
         if (rootTransform == null) return;
 
-        // 1. Die echte 3D-Position der F¸ﬂe abfragen
+        // 1. Die echte 3D-Position der F√º√üe abfragen (Filtert automatisch zerst√∂rte aus)
         Vector3 frontFeet = GetAverageFootPos(new int[] { 0, 3 });
         Vector3 backFeet = GetAverageFootPos(new int[] { 2, 5 });
         Vector3 leftFeet = GetAverageFootPos(new int[] { 0, 1, 2 });
         Vector3 rightFeet = GetAverageFootPos(new int[] { 3, 4, 5 });
 
-        // 2. Vektoren kreuzen, um die exakte Hangneigung zu finden
+        // Wenn auf einer Seite gar kein Bein mehr ist, sinkt diese Seite massiv ab (Procedural Fall)
+        
         Vector3 forwardDir = frontFeet - backFeet;
         Vector3 rightDir = rightFeet - leftFeet;
 
         Vector3 terrainNormal = Vector3.Cross(forwardDir, rightDir).normalized;
         if (terrainNormal == Vector3.zero) terrainNormal = Vector3.up;
 
-        // 3. Den Kˆrper auf diese Hangneigung ausrichten
         Vector3 projectedForward = Vector3.ProjectOnPlane(rootTransform.forward, terrainNormal).normalized;
         Quaternion terrainRotation = Quaternion.LookRotation(projectedForward, terrainNormal);
 
-        // 4. Extreme Winkel abschneiden (damit er nicht umkippt)
         Vector3 euler = terrainRotation.eulerAngles;
         float pitch = NormalizeAngle(euler.x);
         float roll = NormalizeAngle(euler.z);
+pitch = Mathf.Clamp(pitch, -maxBodyTilt * 1.5f, maxBodyTilt * 1.5f);
+roll = Mathf.Clamp(roll, -maxBodyTilt * 1.5f, maxBodyTilt * 1.5f);
 
-        pitch = Mathf.Clamp(pitch, -maxBodyTilt, maxBodyTilt);
-        roll = Mathf.Clamp(roll, -maxBodyTilt, maxBodyTilt);
+// 5. Rotation weich anwenden
+Quaternion targetRot = Quaternion.Euler(pitch, rootTransform.eulerAngles.y, roll);
+transform.rotation = Quaternion.Lerp(transform.rotation, targetRot, Time.deltaTime / (tiltSmoothTime + 0.01f));
+}
 
-        // 5. Rotation weich anwenden
-        Quaternion targetRot = Quaternion.Euler(pitch, rootTransform.eulerAngles.y, roll);
-        transform.rotation = Quaternion.Lerp(transform.rotation, targetRot, Time.deltaTime / (tiltSmoothTime + 0.01f));
-    }
-
-    Vector3 GetAverageFootPos(int[] indices)
+Vector3 GetAverageFootPos(int[] indices)
+{
+Vector3 sum = Vector3.zero;
+int count = 0;
+for (int i = 0; i < indices.Length; i++)
+{
+    int idx = indices[i];
+    if (idx >= 0 && idx < footTips.Count && footTips[idx] != null && !destroyedFeet[idx]) // NEU: destroyedFeet Check
     {
-        Vector3 sum = Vector3.zero;
-        int count = 0;
-        for (int i = 0; i < indices.Length; i++)
-        {
-            int idx = indices[i];
-            if (idx >= 0 && idx < footTips.Count && footTips[idx] != null)
-            {
-                sum += footTips[idx].position; // Hier nehmen wir jetzt XYZ, nicht nur Y!
-                count++;
-            }
-        }
-        return count > 0 ? sum / count : Vector3.zero;
+        sum += footTips[idx].position;
+        count++;
     }
+}
+
+// Fallback: Wenn kein Bein in der Gruppe aktiv ist, nehmen wir die Root-Position (Mech sinkt massiv ab!)
+if (count == 0) return rootTransform.position - Vector3.up * 2.5f; 
+
+return sum / count;
+}
 
     float NormalizeAngle(float a)
     {

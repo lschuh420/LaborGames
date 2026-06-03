@@ -252,7 +252,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   weaponName: M1911
-  damage: 2
+  damage: 25
   fireRate: 0.2
 --- !u!65 &4932109205261509444
 BoxCollider:

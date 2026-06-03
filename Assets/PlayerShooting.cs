@@ -100,7 +100,18 @@ public class PlayerShooting : MonoBehaviour
 
         // Get fire rate from WeaponData
         WeaponData data = equippedWeapons[activeSlot].GetComponent<WeaponData>();
-        int damage = data != null ? data.damage : 1;
+        int damage = 50; // Unser neuer Standard-Wumms
+        
+        if (data != null)
+        {
+            damage = data.damage;
+            Debug.Log($"<color=blue>[PlayerShooting] WeaponData gefunden auf '{equippedWeapons[activeSlot].name}'. Damage aus Script: {damage}</color>");
+        }
+        else
+        {
+            Debug.Log($"<color=cyan>[PlayerShooting] KEIN WeaponData auf '{equippedWeapons[activeSlot].name}' gefunden. Nutze Fallback: {damage}</color>");
+        }
+
         float fireRate = data != null ? data.fireRate : 0.2f;
         fireCooldown = fireRate;
 
