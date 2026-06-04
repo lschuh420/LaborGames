@@ -10,6 +10,14 @@ public class MechLegHealth : MonoBehaviour
     [Header("Visuals & Effects")]
     public GameObject legMesh; // Das Mesh, das abgetrennt wird
     public ParticleSystem explosionPrefab;
+    [Tooltip("Die gelbe Kugel (Schwachstelle), die bei Zerstörung verschwinden soll")]
+    public GameObject weakSpotMesh;
+
+    [Header("Audio (Surgical)")]
+    public AudioClip weakSpotHitSound;
+    public AudioClip legDestroyedSound;
+    [SerializeField, Range(0f, 1f)] private float audioVolume = 0.6f;
+    private AudioSource audioSource;
     
     [Header("References")]
     public MechBossHealth bossMainHealth;
@@ -21,12 +29,25 @@ public class MechLegHealth : MonoBehaviour
         currentLegHealth = maxLegHealth;
     }
 
+    private void Start()
+    {
+        audioSource = GetComponentInChildren<AudioSource>();
+        // Falls am Bein keine Source ist, suchen wir am Root (Boss)
+        if (audioSource == null) audioSource = transform.root.GetComponentInChildren<AudioSource>();
+    }
+
     public void TakeLegDamage(int amount)
     {
         if (isDestroyed) return;
 
         currentLegHealth -= amount;
         Debug.Log($"[LegHealth] Bein-HP: {currentLegHealth}");
+
+        // Treffer-Sound auf Schwachstelle
+        if (audioSource != null && weakSpotHitSound != null)
+        {
+            audioSource.PlayOneShot(weakSpotHitSound, audioVolume);
+        }
 
         if (currentLegHealth <= 0)
         {
@@ -41,21 +62,32 @@ public class MechLegHealth : MonoBehaviour
 
         Debug.Log("<color=orange>[LegHealth] BOOM! Bein weg!</color>");
 
+        // Bein-Zerstörung Sound
+        if (audioSource != null && legDestroyedSound != null)
+        {
+            audioSource.PlayOneShot(legDestroyedSound, 1.0f);
+        }
+
+        // 0. Schwachstelle ausblenden
+        if (weakSpotMesh != null)
+        {
+            weakSpotMesh.SetActive(false);
+        }
+
         // 1. IK deaktivieren
         if (legIK != null)
         {
             legIK.enabled = false;
         }
 
-        // 2. Procedural System informieren (Kein Animation-Gedöns, pure IK!)
-        // Wir suchen die Systeme auf dem Root
+        // 2. Procedural System informieren
         Transform root = transform.root;
         StepManager stepManager = root.GetComponentInChildren<StepManager>();
         BodyAdaptation bodyAdapt = root.GetComponentInChildren<BodyAdaptation>();
 
         if (stepManager != null)
         {
-            stepManager.ReportLegDestroyed(this.transform); // Dieses Bein ist der Root für den StepManager
+            stepManager.ReportLegDestroyed(this.transform);
         }
 
         if (bodyAdapt != null && footTip != null)
@@ -66,20 +98,17 @@ public class MechLegHealth : MonoBehaviour
         // 3. Visuelles Feedback: Mesh "abtrennen"
         if (legMesh != null)
         {
-            // Sicherstellen, dass das Bein nicht durch den Boden fällt
             Rigidbody rb = legMesh.GetComponent<Rigidbody>();
             if (rb == null) rb = legMesh.AddComponent<Rigidbody>();
             
-            // Collider checken/hinzufügen falls nötig
             Collider col = legMesh.GetComponent<Collider>();
-            if (col == null) col = legMesh.AddComponent<BoxCollider>(); // Fallback
+            if (col == null) col = legMesh.AddComponent<BoxCollider>();
             
-            legMesh.transform.SetParent(null); // Vom Boss trennen
+            legMesh.transform.SetParent(null);
             rb.isKinematic = false;
             rb.useGravity = true;
-            rb.collisionDetectionMode = CollisionDetectionMode.Continuous; // Gegen Tunneling
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
-            // Ein kleiner Impuls nach außen/oben
             Vector3 forceDir = (legMesh.transform.position - root.position).normalized + Vector3.up;
             rb.AddForce(forceDir * 5f, ForceMode.Impulse);
             rb.AddTorque(Random.insideUnitSphere * 10f, ForceMode.Impulse);

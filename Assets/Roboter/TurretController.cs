@@ -12,20 +12,26 @@ public class TurretController : MonoBehaviour
     [Tooltip("Der Transform des Ziels (wird vom Behavior Tree gesetzt)")]
     public Transform target;
 
-    // NEU: Für die Suche nach Koordinaten (Gelber Modus)
+    // NEU: FÃ¼r die Suche nach Koordinaten (Gelber Modus)
     [HideInInspector] public Vector3 positionTarget;
     [HideInInspector] public bool usePositionTarget;
 
     [Header("Turret Rotation Speed")]
     [Tooltip("Maximale Drehgeschwindigkeit des Turms in Grad/Sekunde. 15-25 = schwerer Mech, 45+ = leichter Turm")]
     [SerializeField] private float maxYawSpeed = 20f;
-    [Tooltip("Wie weich/träge der Turm beschleunigt und abbremst")]
+    [Tooltip("Wie weich/trÃ¤ge der Turm beschleunigt und abbremst")]
     [SerializeField] private float yawSmoothTime = 0.4f;
 
     [Header("Cannon Pitch Speed")]
     [SerializeField] private float pitchSpeed = 45f;
     [SerializeField] private float minPitch = -15f;
     [SerializeField] private float maxPitch = 25f;
+
+    [Header("Audio (Surgical)")]
+    public AudioSource audioSource; // EXPLICIT
+    [Tooltip("Sound-Loop fÃ¼r die Drehung des OberkÃ¶rpers")]
+    public AudioClip turretRotateLoop;
+    [SerializeField, Range(0f, 1f)] private float turretVolume = 0.3f;
 
     private float currentYawVelocity;
     private float currentPitchVel;
@@ -38,27 +44,53 @@ public class TurretController : MonoBehaviour
             enabled = false;
             return;
         }
+
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
+        
+        if (audioSource != null)
+        {
+            // Sicherstellen, dass der Sound 3D ist und von der Position des Roboters kommt
+            audioSource.spatialBlend = 1f; 
+            
+            if (turretRotateLoop != null)
+            {
+                audioSource.clip = turretRotateLoop;
+                audioSource.loop = true;
+                audioSource.Play();
+                audioSource.volume = 0;
+            }
+        }
     }
 
     void LateUpdate()
     {
-        // 1. Wenn wir ein echtes Objekt haben (Rot), hat das Vorrang
         if (target != null)
         {
             HandleYawRotation(target.position);
             HandlePitchRotation(target.position);
         }
-        // 2. Wenn wir eine Suchposition haben (Gelb), zielen wir dorthin
         else if (usePositionTarget)
         {
             HandleYawRotation(positionTarget);
             HandlePitchRotation(positionTarget);
         }
-        // 3. Wenn gar nichts da ist (Grün), entspannen wir uns nach vorne
         else
         {
             ResetToNeutral();
         }
+
+        UpdateRotationAudio();
+    }
+
+    void UpdateRotationAudio()
+    {
+        if (audioSource == null || turretRotateLoop == null) return;
+
+        float totalVel = Mathf.Abs(currentYawVelocity) + Mathf.Abs(currentPitchVel);
+        float intensity = Mathf.Clamp01(totalVel / maxYawSpeed);
+
+        audioSource.volume = intensity * turretVolume;
+        audioSource.pitch = 0.85f + (intensity * 0.3f);
     }
 
     void ResetToNeutral()
