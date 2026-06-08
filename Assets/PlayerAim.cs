@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Cinemachine;
+using StarterAssets;
 
 public class PlayerAim : MonoBehaviour
 {
@@ -19,11 +20,22 @@ public class PlayerAim : MonoBehaviour
     [Header("Weapon Check")]
     [SerializeField] private PlayerShooting playerShooting;
 
+    [Header("Movement References")]
+    [SerializeField] private ThirdPersonController controller;   // auto-found if left empty
+    [SerializeField] private StarterAssetsInputs starterInputs;  // auto-found if left empty
+
     [Header("Aim Rotation")]
     [SerializeField] private float aimRotationSpeed = 15f;
 
     public bool IsAiming  { get; private set; }
     public bool HasWeapon { get; private set; }
+
+    void Awake()
+    {
+        // Fall back to components on the same GameObject so this works without wiring the inspector.
+        if (controller == null)    TryGetComponent(out controller);
+        if (starterInputs == null) TryGetComponent(out starterInputs);
+    }
 
     void Update()
     {
@@ -33,8 +45,18 @@ public class PlayerAim : MonoBehaviour
                     && playerShooting.activeSlot < playerShooting.equippedWeapons.Length
                     && playerShooting.equippedWeapons[playerShooting.activeSlot] != null;
 
-        // Aiming = right-click + weapon equipped (drives camera zoom & body rotation)
-        IsAiming = Input.GetMouseButton(1) && HasWeapon;
+        // A dodge roll temporarily breaks aim (like ARC Raiders): keeps the character framed
+        // in the wide cam during the lunge and stops the rotation fight with the roll.
+        bool isRolling = controller != null && controller.IsRolling;
+
+        // Aiming = right-click + weapon equipped, but never while rolling.
+        IsAiming = Input.GetMouseButton(1) && HasWeapon && !isRolling;
+
+        // Right-click to aim cancels sprinting.
+        if (IsAiming && starterInputs != null)
+        {
+            starterInputs.sprint = false;
+        }
 
         // ---- Camera priority swap ----
         if (IsAiming)

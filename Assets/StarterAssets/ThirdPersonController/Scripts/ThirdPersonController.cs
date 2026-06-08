@@ -36,6 +36,7 @@ namespace StarterAssets
         [Header("Roll")]
         public float RollSpeed = 8f;
         public float RollDuration = 0.6f;
+        public float RollCooldown = 1.0f;
 
         [Header("Player Grounded")]
         public bool Grounded = true;
@@ -69,7 +70,11 @@ namespace StarterAssets
         // roll
         private bool _isRolling = false;
         private float _rollTimer = 0f;
+        private float _rollCooldownTimer = 0f;
         private Vector3 _rollDirection;
+
+        /// <summary>True while a dodge roll is in progress. Used by PlayerAim to break ADS.</summary>
+        public bool IsRolling => _isRolling;
 
         // animation IDs
         private int _animIDSpeed;
@@ -137,8 +142,14 @@ namespace StarterAssets
             Move();
             HandleRoll();
 
-            // Start roll on Left Ctrl
-            if (Input.GetKeyDown(KeyCode.LeftControl) && !_isRolling && Grounded)
+            // Tick down the cooldown between rolls
+            if (_rollCooldownTimer > 0f)
+            {
+                _rollCooldownTimer -= Time.deltaTime;
+            }
+
+            // Start roll on Left Ctrl (blocked while rolling or during cooldown)
+            if (Input.GetKeyDown(KeyCode.LeftControl) && !_isRolling && _rollCooldownTimer <= 0f && Grounded)
             {
                 StartRoll();
             }
@@ -278,6 +289,7 @@ namespace StarterAssets
             if (_rollTimer <= 0f)
             {
                 _isRolling = false;
+                _rollCooldownTimer = RollCooldown;
             }
         }
 
