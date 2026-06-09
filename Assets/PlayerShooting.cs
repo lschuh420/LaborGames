@@ -26,6 +26,12 @@ public class PlayerShooting : MonoBehaviour
     [Header("Shooting")]
     public float shootDistance = 100f;
 
+    [Header("Bullet Hole / Decal")]
+    [Tooltip("Leave a persistent bullet hole on the surface the shot lands on.")]
+    public bool spawnBulletHole = true;
+    [Tooltip("Diameter of the bullet hole in meters.")]
+    public float bulletHoleSize = 0.15f;
+
     private Camera playerCamera;
     private float fireCooldown = 0f;
     private WeaponIK weaponIK;
@@ -161,7 +167,14 @@ public class PlayerShooting : MonoBehaviour
         // Use layermask to ignore the player itself
         int layerMask = ~LayerMask.GetMask("Player");
         if (Physics.Raycast(ray, out hit, shootDistance, layerMask))
+        {
             targetPoint = hit.point;
+
+            // Leave a bullet hole where the shot lands — but not on damageable targets
+            // (enemies/boss), where an impact effect is more fitting than a hole.
+            if (spawnBulletHole && hit.collider.GetComponentInParent<IDamageable>() == null)
+                BulletHole.Spawn(hit.point, hit.normal, hit.collider.transform, bulletHoleSize);
+        }
         else
             targetPoint = ray.GetPoint(shootDistance);
 

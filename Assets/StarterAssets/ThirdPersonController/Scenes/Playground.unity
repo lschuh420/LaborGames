@@ -297,6 +297,8 @@ MonoBehaviour:
   aimLayerIndex: 1
   aimBlendSpeed: 10
   playerShooting: {fileID: 133493100}
+  controller: {fileID: 0}
+  starterInputs: {fileID: 0}
   aimRotationSpeed: 15
 --- !u!114 &133493100
 MonoBehaviour:
@@ -315,7 +317,10 @@ MonoBehaviour:
   - {fileID: 0}
   activeSlot: 0
   rightHandHolder: {fileID: 233086270}
-  bulletPrefab: {fileID: 7731223031416536009, guid: 383531769f00c4137a70df3c433f5b96, type: 3}
+  alignHeldWeapon: 1
+  gripPositionOffset: {x: 0, y: 0, z: 0}
+  gripRotationOffset: {x: 0, y: 0, z: 0}
+  bulletPrefab: {fileID: 7027541266074008781, guid: 580f2fe3267548c4db9cf80c2d67aa70, type: 3}
   bulletSpeed: 60
   shootDistance: 100
 --- !u!114 &133493101
@@ -382,6 +387,7 @@ MonoBehaviour:
   FallTimeout: 0.15
   RollSpeed: 8
   RollDuration: 0.6
+  RollCooldown: 1
   Grounded: 1
   GroundedOffset: -0.14
   GroundedRadius: 0.28
@@ -4320,6 +4326,8 @@ MonoBehaviour:
   aimLayerIndex: 1
   aimBlendSpeed: 10
   playerShooting: {fileID: 5340809809723861927}
+  controller: {fileID: 0}
+  starterInputs: {fileID: 0}
   aimRotationSpeed: 15
 --- !u!114 &5340809809723861927 stripped
 MonoBehaviour:
