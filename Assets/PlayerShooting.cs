@@ -66,7 +66,7 @@ public class PlayerShooting : MonoBehaviour
         RefreshWeaponVisibility();
         Debug.Log("Picked up: " + weaponPrefab.name + " in slot " + slot);
 
-    if (weaponIK != null)
+        if (weaponIK != null)
         {
             Transform leftHandTarget = equippedWeapons[slot].transform.Find("LeftHandTarget");
             if (leftHandTarget == null)
@@ -100,7 +100,18 @@ public class PlayerShooting : MonoBehaviour
 
         // Get fire rate from WeaponData
         WeaponData data = equippedWeapons[activeSlot].GetComponent<WeaponData>();
-        int damage = data != null ? data.damage : 1;
+        int damage = 50; // Unser neuer Standard-Wumms
+        
+        if (data != null)
+        {
+            damage = data.damage;
+            Debug.Log($"<color=blue>[PlayerShooting] WeaponData gefunden auf '{equippedWeapons[activeSlot].name}'. Damage aus Script: {damage}</color>");
+        }
+        else
+        {
+            Debug.Log($"<color=cyan>[PlayerShooting] KEIN WeaponData auf '{equippedWeapons[activeSlot].name}' gefunden. Nutze Fallback: {damage}</color>");
+        }
+
         float fireRate = data != null ? data.fireRate : 0.2f;
         fireCooldown = fireRate;
 
@@ -132,5 +143,16 @@ public class PlayerShooting : MonoBehaviour
             bulletScript.damage = damage;
             bulletScript.speed = bulletSpeed;
         }
+
+        // ====================================================================
+        // --- NEU: SOUND-MELDUNG AN DEN ROBOTER SCHICKEN ---
+        // ====================================================================
+        MechSensor robotSensor = FindObjectOfType<MechSensor>();
+        if (robotSensor != null)
+        {
+            // Schickt die aktuelle Position des Spielers an das Gehör des Roboters
+            robotSensor.HearNoise(transform.position);
+        }
+        // ====================================================================
     }
 }
