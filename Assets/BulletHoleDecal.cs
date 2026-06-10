@@ -5,10 +5,10 @@ using UnityEngine.Rendering;
 // Spawns and manages persistent bullet-hole decals at impact points.
 //
 // Fully procedural: no prefab, material or texture asset has to be wired up in the
-// Inspector. Just call BulletHole.Spawn(point, normal, surface) from your shooting
+// Inspector. Just call BulletHoleDecal.Spawn(point, normal, surface) from your shooting
 // code (see PlayerShooting.cs). The quad mesh, transparent material and scorched-hole
 // texture are all built once at runtime and shared between every hole.
-public class BulletHole : MonoBehaviour
+public class BulletHoleDecal : MonoBehaviour
 {
     [Tooltip("World-space diameter of the hole in meters.")]
     public float size = 0.15f;
@@ -20,7 +20,7 @@ public class BulletHole : MonoBehaviour
     // Cap how many holes are alive at once so the scene doesn't fill up with decals.
     // The oldest one is recycled when the cap is reached.
     const int MaxHoles = 100;
-    static readonly Queue<BulletHole> active = new Queue<BulletHole>();
+    static readonly Queue<BulletHoleDecal> active = new Queue<BulletHoleDecal>();
 
     MeshRenderer meshRenderer;
     MaterialPropertyBlock mpb;
@@ -33,13 +33,13 @@ public class BulletHole : MonoBehaviour
     /// <param name="normal">Surface normal at the impact (use RaycastHit.normal).</param>
     /// <param name="surface">Optional transform to parent to, so the hole follows moving objects.</param>
     /// <param name="size">Hole diameter in meters.</param>
-    public static BulletHole Spawn(Vector3 point, Vector3 normal, Transform surface = null,
+    public static BulletHoleDecal Spawn(Vector3 point, Vector3 normal, Transform surface = null,
                                    float size = 0.15f)
     {
         // Recycle the oldest hole once we hit the cap.
         while (active.Count >= MaxHoles)
         {
-            BulletHole oldest = active.Dequeue();
+            BulletHoleDecal oldest = active.Dequeue();
             if (oldest != null) Destroy(oldest.gameObject);
         }
 
@@ -51,7 +51,7 @@ public class BulletHole : MonoBehaviour
         go.transform.Rotate(0f, 0f, Random.Range(0f, 360f), Space.Self);
         if (surface != null) go.transform.SetParent(surface, true);
 
-        BulletHole hole = go.AddComponent<BulletHole>();
+        BulletHoleDecal hole = go.AddComponent<BulletHoleDecal>();
         hole.size = size;
         hole.Build();
         active.Enqueue(hole);

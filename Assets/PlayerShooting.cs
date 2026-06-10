@@ -173,7 +173,7 @@ public class PlayerShooting : MonoBehaviour
             // Leave a bullet hole where the shot lands — but not on damageable targets
             // (enemies/boss), where an impact effect is more fitting than a hole.
             if (spawnBulletHole && hit.collider.GetComponentInParent<IDamageable>() == null)
-                BulletHole.Spawn(hit.point, hit.normal, hit.collider.transform, bulletHoleSize);
+                BulletHoleDecal.Spawn(hit.point, hit.normal, hit.collider.transform, bulletHoleSize);
         }
         else
             targetPoint = ray.GetPoint(shootDistance);

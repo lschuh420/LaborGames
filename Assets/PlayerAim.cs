@@ -59,16 +59,12 @@ public class PlayerAim : MonoBehaviour
         }
 
         // ---- Camera priority swap ----
-        if (IsAiming)
-        {
-            aimCam.Priority    = activePriority;
-            normalCam.Priority = inactivePriority;
-        }
-        else
-        {
-            aimCam.Priority    = inactivePriority;
-            normalCam.Priority = activePriority;
-        }
+        // Guard against unassigned cameras so a missing inspector reference doesn't
+        // throw every frame (assign Normal Cam / Aim Cam on the PlayerAim component).
+        if (aimCam != null)
+            aimCam.Priority = IsAiming ? activePriority : inactivePriority;
+        if (normalCam != null)
+            normalCam.Priority = IsAiming ? inactivePriority : activePriority;
 
         // ---- Animation: upper body layer + aim pose toggle ----
         if (animator != null)
