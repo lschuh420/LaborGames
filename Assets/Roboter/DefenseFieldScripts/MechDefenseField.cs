@@ -58,8 +58,13 @@ public class MechDefenseField : MonoBehaviour
         }
 
         Collider[] hits = Physics.OverlapSphere(transform.position, fieldRadius);
+        Transform root = transform.root; // Referenz auf den eigenen Roboter-Stamm
+
         foreach (Collider hit in hits)
         {
+            // EIGENSCHUTZ: Wenn der getroffene Collider zum eigenen Roboter gehört, ignorieren
+            if (hit.transform.root == root) continue;
+
             IDamageable target = hit.GetComponentInParent<IDamageable>();
             if (target != null)
             {

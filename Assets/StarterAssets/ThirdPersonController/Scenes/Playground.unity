@@ -1675,6 +1675,7 @@ MonoBehaviour:
   aimLayerIndex: 1
   aimBlendSpeed: 10
   playerShooting: {fileID: 5340809809723861927}
+  aimRotationSpeed: 15
 --- !u!114 &5340809809723861927 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8237373368875966028, guid: cf4b8d658fcb342e798f1dba3755c759, type: 3}
