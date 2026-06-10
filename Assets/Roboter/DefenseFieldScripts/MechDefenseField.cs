@@ -10,43 +10,69 @@ public class MechDefenseField : MonoBehaviour
     public int damage = 25; // Macht ordentlich Wumms!
 
     [Header("Visuals")]
-    [Tooltip("Das Partikelsystem f�r die Energie-Nova")]
+    [Tooltip("Das Partikelsystem für die Energie-Nova")]
     public ParticleSystem novaEffect;
+
+    [Header("Audio (Surgical)")]
+    public AudioSource audioSource; // EXPLICIT
+    [Tooltip("Sound, der während des Aufladens spielt (wird vom Master-Script gesteuert)")]
+    public AudioClip chargingSound;
+    [Tooltip("Sound der finalen Explosion")]
+    public AudioClip novaExplosionSound;
+    [SerializeField, Range(0f, 1f)] private float audioVolume = 0.7f;
+
+    private void Start()
+    {
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
+        if (audioSource == null) audioSource = transform.root.GetComponentInChildren<AudioSource>();
+    }
+
+    public void PlayChargingSound()
+    {
+        if (audioSource != null && chargingSound != null)
+        {
+            audioSource.clip = chargingSound;
+            audioSource.loop = false;
+            audioSource.Play();
+        }
+    }
+
+    public void StopChargingSound()
+    {
+        if (audioSource != null && audioSource.clip == chargingSound)
+        {
+            audioSource.Stop();
+        }
+    }
 
     public void TriggerField()
     {
-        Debug.Log("<color=yellow>[1] TriggerField wurde vom Master-Knoten aufgerufen!</color>");
-
-        // 1. Visueller Effekt abspielen
         if (novaEffect != null)
         {
-            Debug.Log("<color=green>[2] Partikel gefunden! Spiele es jetzt ab!</color>");
             novaEffect.Play();
         }
-        else
+
+        if (audioSource != null && novaExplosionSound != null)
         {
-            Debug.LogError("<color=red>[FEHLER] novaEffect ist NULL! Du hast das Partikelsystem im Inspector nicht reingezogen!</color>");
+            audioSource.PlayOneShot(novaExplosionSound, audioVolume);
         }
 
-        // 2. Physik-Check: Wer ist im Radius?
         Collider[] hits = Physics.OverlapSphere(transform.position, fieldRadius);
-        Debug.Log($"<color=cyan>[3] Nova explodiert! Objekte im Radius gefunden: {hits.Length}</color>");
+        Transform root = transform.root; // Referenz auf den eigenen Roboter-Stamm
 
         foreach (Collider hit in hits)
         {
-            // Wir suchen nach dem IDamageable Interface, egal ob Spieler, Kiste oder ein anderes Objekt!
-            IDamageable target = hit.GetComponentInParent<IDamageable>();
+            // EIGENSCHUTZ: Wenn der getroffene Collider zum eigenen Roboter gehört, ignorieren
+            if (hit.transform.root == root) continue;
 
+            IDamageable target = hit.GetComponentInParent<IDamageable>();
             if (target != null)
             {
-                // Peng! Schaden austeilen.
                 target.TakeDamage(damage);
-                Debug.Log($"<color=magenta>[MechDefenseField] Ziel im Radius getroffen! Teile {damage} Schaden aus.</color>");
             }
         }
     }
 
-    // Zeichnet eine hellblaue Kugel im Editor, damit du den Radius perfekt sehen und einstellen kannst
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0f, 1f, 1f, 0.3f);

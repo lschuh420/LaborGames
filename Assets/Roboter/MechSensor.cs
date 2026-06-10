@@ -7,12 +7,8 @@ public class MechSensor : MonoBehaviour
     public BehaviorTree behaviorTree;
 
     [Header("Visual Feedback (Licht & Scanner)")]
-    [Tooltip("Ziehe hier dein Spot Light rein (falls du noch eins auf dem Boden haben willst)")]
     public Light statusLight;
-
-    [Tooltip("Ziehe hier deinen neuen 3D-Kegel (Hologramm-Strahl) rein")]
     public MeshRenderer scannerConeRenderer;
-    [Tooltip("Wie durchsichtig soll der Strahl sein? (0 = unsichtbar, 1 = massiv)")]
     public float scannerAlpha = 0.3f;
 
     public Color colorGreen = Color.green;
@@ -20,16 +16,21 @@ public class MechSensor : MonoBehaviour
     public Color colorRed = Color.red;
 
     [Header("Scanner Beam Dynamics")]
-    [Tooltip("Ziehe hier das LEERE ScannerPivot-Objekt rein")]
     public Transform scannerPivot;
-    [Tooltip("Wie lang ist der Strahl maximal, wenn keine Wand da ist?")]
     public float maxScannerLength = 25f;
 
+    [Header("Audio (Surgical)")]
+    public AudioClip alertSound;
+    [SerializeField, Range(0f, 1f)] private float alertVolume = 0.7f;
+    private AudioSource audioSource;
+
     [Header("Senses Setup")]
+    [Tooltip("Der Punkt, von dem aus der Mech schaut. Muss vor dem KÃ¶rper liegen!")]
     public Transform eyesPivot;
     public float sightRadius = 25f;
     public float fieldOfView = 90f;
     public LayerMask playerLayer;
+    [Tooltip("Layer, die die Sicht blockieren (WÃ¤nde, Hindernisse). DARF NICHT den Robot-Layer enthalten!")]
     public LayerMask obstacleLayer;
 
     [Header("Memory & Delays")]
@@ -37,17 +38,24 @@ public class MechSensor : MonoBehaviour
     public float loseSightDelay = 8f;
     private float timeSinceLastSeen = 0f;
 
-    [Header("State Output (Nur zur Übersicht)")]
-    public int currentAlertState = 0; // 0=Grün, 1=Gelb, 2=Rot
+    [Header("State Output (Nur zur Ãœbersicht)")]
+    public int currentAlertState = 0; // 0=GrÃ¼n, 1=Gelb, 2=Rot
     public Transform currentTarget = null;
     public Vector3 lastKnownPosition;
 
     void Start()
     {
-        if (behaviorTree == null)
+        if (behaviorTree == null) behaviorTree = GetComponent<BehaviorTree>();
+        
+        // Sicherheits-Check fÃ¼r eyesPivot
+        if (eyesPivot == null)
         {
-            behaviorTree = GetComponent<BehaviorTree>();
+            Debug.LogWarning($"[MechSensor] Kein EyesPivot auf {name} zugewiesen! Benutze transform.position.");
+            eyesPivot = transform;
         }
+
+        // AudioSource im Sound-Container suchen
+        audioSource = GetComponentInChildren<AudioSource>();
     }
 
     void Update()
@@ -61,62 +69,46 @@ public class MechSensor : MonoBehaviour
     void SyncStateFromTree()
     {
         if (behaviorTree == null) return;
-
         SharedInt alertVar = behaviorTree.GetVariable("AlertState") as SharedInt;
-        if (alertVar != null)
-        {
-            currentAlertState = alertVar.Value;
-        }
+        if (alertVar != null) currentAlertState = alertVar.Value;
     }
 
     void UpdateLightColor()
     {
-        // 1. Zielfarbe bestimmen
         Color targetColor = colorGreen;
         if (currentAlertState == 1) targetColor = colorYellow;
         else if (currentAlertState == 2) targetColor = colorRed;
 
-        // 2. Das normale Spot Light aktualisieren (falls zugewiesen)
-        if (statusLight != null)
-        {
-            statusLight.color = targetColor;
-        }
+        if (statusLight != null) statusLight.color = targetColor;
 
-        // 3. Den neuen Hologramm-Kegel aktualisieren (falls zugewiesen)
         if (scannerConeRenderer != null)
         {
-            // Wir mischen die Farbe mit deiner gewünschten Durchsichtigkeit (Alpha)
             Color coneColor = new Color(targetColor.r, targetColor.g, targetColor.b, scannerAlpha);
-
-            // In URP heißt die Hauptfarbe im Material standardmäßig "_BaseColor"
             scannerConeRenderer.material.SetColor("_BaseColor", coneColor);
         }
     }
+
     void UpdateScannerLength()
     {
-        if (scannerPivot == null) return;
+        if (scannerPivot == null || eyesPivot == null) return;
         float currentLength = maxScannerLength;
-
         LayerMask visualHitMask = obstacleLayer | playerLayer;
 
         if (Physics.Raycast(eyesPivot.position, eyesPivot.forward, out RaycastHit hit, maxScannerLength, visualHitMask))
         {
             currentLength = hit.distance;
-
-            // NEU: Wenn der getroffene Layer zum Player gehört, mogeln wir!
-            // Wir schieben den Laser optisch ein paar Zentimeter tiefer in die Hitbox.
-            if (((1 << hit.collider.gameObject.layer) & playerLayer) != 0)
-            {
-                currentLength += 0.4f; // <-- Hier kannst du jonglieren (z. B. 0.3f oder 0.5f), bis es perfekt aussieht!
-            }
+            if (((1 << hit.collider.gameObject.layer) & playerLayer) != 0) currentLength += 0.4f;
         }
 
         Vector3 newScale = scannerPivot.localScale;
         newScale.z = currentLength;
         scannerPivot.localScale = newScale;
     }
+
     void LookForPlayer()
     {
+        if (eyesPivot == null) return;
+
         Collider[] hits = Physics.OverlapSphere(transform.position, sightRadius, playerLayer);
         bool playerSeenThisFrame = false;
 
@@ -131,11 +123,28 @@ public class MechSensor : MonoBehaviour
             {
                 float distanceToTarget = Vector3.Distance(eyesPivot.position, targetCenter);
 
-                if (!Physics.Raycast(eyesPivot.position, directionToTarget, distanceToTarget, obstacleLayer))
+                bool hitSomething = Physics.Raycast(eyesPivot.position, directionToTarget, out RaycastHit rayHit, distanceToTarget, obstacleLayer);
+                
+                if (!hitSomething)
                 {
-                    SetStateRed(potentialTarget);
+                    if (currentAlertState != 2)
+                    {
+                        Debug.Log($"<color=red>[MechSensor] Spieler GESEHEN! Wechsel zu ROT.</color>");
+                        
+                        // Alarm-Sound abspielen (nur beim Wechsel zu ROT)
+                        if (audioSource != null && alertSound != null)
+                        {
+                            audioSource.PlayOneShot(alertSound, alertVolume);
+                        }
+
+                        SetStateRed(potentialTarget);
+                    }
                     playerSeenThisFrame = true;
                     timeSinceLastSeen = 0f;
+                }
+                else
+                {
+                    Debug.DrawLine(eyesPivot.position, rayHit.point, Color.red);
                 }
             }
         }
@@ -143,9 +152,9 @@ public class MechSensor : MonoBehaviour
         if (!playerSeenThisFrame && currentAlertState == 2)
         {
             timeSinceLastSeen += Time.deltaTime;
-
             if (timeSinceLastSeen >= loseSightDelay)
             {
+                Debug.Log($"<color=yellow>[MechSensor] Sichtverlust zu lange! Wechsel zu GELB.</color>");
                 Vector3 lostPos = currentTarget != null ? currentTarget.position : transform.position;
                 SetStateYellow(lostPos);
             }
@@ -156,6 +165,7 @@ public class MechSensor : MonoBehaviour
     {
         if (currentAlertState < 2)
         {
+            Debug.Log($"<color=orange>[MechSensor] GerÃ¤usch gehÃ¶rt! Wechsel zu GELB.</color>");
             SetStateYellow(noisePosition);
         }
     }

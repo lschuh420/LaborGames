@@ -101,6 +101,9 @@ public class RobotCombatMaster : Action
                 currentState = 1; // Wechsel in den Auflade-Zustand
                 nextActionTime = Time.time + chargeTime;
 
+                // Sound-Trigger: Aufladen starten
+                if (defenseField != null) defenseField.PlayChargingSound();
+
                 if (agent != null) agent.isStopped = true;
                 if (turret != null) turret.target = null;
                 return TaskStatus.Running;

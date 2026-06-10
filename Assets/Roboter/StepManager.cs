@@ -70,6 +70,11 @@ public class StepManager : MonoBehaviour
     [SerializeField] private float rayDistance = 20f;
     [SerializeField] private float footGroundClearance = 0.05f;
 
+    [Header("Audio (Surgical)")]
+    public AudioSource audioSource; // EXPLICIT
+    [SerializeField] private AudioClip[] footstepSounds;
+    [SerializeField, Range(0f, 1f)] private float footstepVolume = 0.4f;
+
     private Vector3 lastBodyPosition;
     private Quaternion lastBodyRotation;
     private Vector3 smoothedVel;
@@ -85,6 +90,9 @@ public class StepManager : MonoBehaviour
         InitializeLegData();
 
         if (targetsContainer != null) targetsContainer.SetParent(null);
+
+        // Fallback falls nicht zugewiesen
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         SnapAllLegsToGround();
         lastBodyPosition = transform.position;
@@ -109,7 +117,6 @@ public class StepManager : MonoBehaviour
         if (targetsContainer == null) targetsContainer = GameObject.Find("IK_Targets_Container")?.transform;
     }
 
-    // NEU: Methode um ein Bein zu deaktivieren
     public void ReportLegDestroyed(Transform destroyedLegRoot)
     {
         foreach (var leg in legs)
@@ -158,7 +165,7 @@ public class StepManager : MonoBehaviour
         float maxDist = 0f;
         for (int i = 0; i < legs.Count; i++)
         {
-            if (legs[i].isSteppingActive || legs[i].isDestroyed) // Zerstörte Beine ignorieren
+            if (legs[i].isSteppingActive || legs[i].isDestroyed)
             {
                 legs[i].currentUrgency = 0f;
                 continue;
@@ -227,7 +234,7 @@ public class StepManager : MonoBehaviour
 
         foreach (int legIndex in legsInCurrentStep)
         {
-            if (legs[legIndex].isSteppingActive || legs[legIndex].isDestroyed) continue; // Zerstört? Skip.
+            if (legs[legIndex].isSteppingActive || legs[legIndex].isDestroyed) continue;
 
             if (legs[legIndex].currentUrgency > stepThreshold)
             {
@@ -240,7 +247,7 @@ public class StepManager : MonoBehaviour
         {
             foreach (int legIndex in legsInCurrentStep)
             {
-                if (!legs[legIndex].isSteppingActive && !legs[legIndex].isDestroyed) // Nur gesunde Beine
+                if (!legs[legIndex].isSteppingActive && !legs[legIndex].isDestroyed)
                 {
                     CalculateNextStepTarget(legIndex, out Vector3 nextPos, out Quaternion nextRot);
                     TryExecuteStep(legIndex, nextPos, nextRot);
@@ -315,6 +322,12 @@ public class StepManager : MonoBehaviour
         {
             legs[index].isSteppingActive = false;
             OnStepLanded?.Invoke(1.0f);
+
+            if (audioSource != null && footstepSounds != null && footstepSounds.Length > 0)
+            {
+                audioSource.pitch = Random.Range(0.85f, 1.15f);
+                audioSource.PlayOneShot(footstepSounds[Random.Range(0, footstepSounds.Length)], footstepVolume);
+            }
         }
     }
 
