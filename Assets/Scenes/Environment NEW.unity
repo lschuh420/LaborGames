@@ -3308,7 +3308,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1101804978672451469, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -230.95
+      value: -230.61
       objectReference: {fileID: 0}
     - target: {fileID: 1101804978672451469, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3346,6 +3346,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1407233880320284712, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
+      propertyPath: ShoulderOffset.x
+      value: 2.7
+      objectReference: {fileID: 0}
     - target: {fileID: 2303837295952873798, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
       propertyPath: m_Name
       value: PlayerFollowCamera
@@ -3356,6 +3360,10 @@ PrefabInstance:
       objectReference: {fileID: 2026171796}
     - target: {fileID: 3049308290382185077, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
       propertyPath: Target.CustomLookAtTarget
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5257710237143937307, guid: 55761878e1ec04463b5a2394997ced51, type: 3}
+      propertyPath: PivotOffset.z
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents:
@@ -5788,7 +5796,7 @@ MonoBehaviour:
   alignHeldWeapon: 1
   gripPositionOffset: {x: 0, y: 0, z: 0}
   gripRotationOffset: {x: 0, y: 0, z: 0}
-  bulletPrefab: {fileID: 7027541266074008781, guid: 580f2fe3267548c4db9cf80c2d67aa70, type: 3}
+  bulletPrefab: {fileID: 7027541266074008781, guid: c974e82ba798f204dbf6da44361e9083, type: 3}
   bulletSpeed: 60
   shootDistance: 100
   spawnBulletHole: 1
@@ -9045,7 +9053,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8877569885803143112, guid: 6aa9bfa1c94314a0293214b9d241519c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -230.95
+      value: -230.61
       objectReference: {fileID: 0}
     - target: {fileID: 8877569885803143112, guid: 6aa9bfa1c94314a0293214b9d241519c, type: 3}
       propertyPath: m_LocalPosition.y
@@ -15717,7 +15725,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 25, y: 25}
+  m_SizeDelta: {x: 75, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2124195362
 MonoBehaviour:
@@ -15732,14 +15740,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.108843625, g: 0.9622642, b: 0.077162705, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: ab5878825fa11469bad6fee3c0513c53, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 5bec8e6066f7940ad820ad7d82177551, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
