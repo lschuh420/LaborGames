@@ -24,11 +24,14 @@ public class MechDriver : MonoBehaviour
 
     private NavMeshAgent agent;
     private StepManager stepManager;
+    private float baseMaxSpeed;
+    private int destroyedLegsCount = 0;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         stepManager = GetComponentInChildren<StepManager>();
+        baseMaxSpeed = maxSpeed;
         agent.speed = maxSpeed;
 
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
@@ -39,6 +42,42 @@ public class MechDriver : MonoBehaviour
             audioSource.loop = true;
             audioSource.Play();
         }
+
+        // Auf Bein-Zerstörung reagieren
+        MechBossHealth.OnLegDestroyed += HandleLegDestroyed;
+    }
+
+    private void OnDestroy()
+    {
+        MechBossHealth.OnLegDestroyed -= HandleLegDestroyed;
+    }
+
+    private void HandleLegDestroyed(int count)
+    {
+        destroyedLegsCount = count;
+        UpdateMaxSpeed();
+    }
+
+    private void UpdateMaxSpeed()
+    {
+        // 1. Basis-Reduktion: 15% pro Bein
+        float factor = 1f - (destroyedLegsCount * 0.15f);
+
+        // 2. Kritischer Malus: Ab 3 Beinen wird es EXTREM mühsam (Arc Raiders Style)
+        if (destroyedLegsCount >= 3)
+        {
+            // Massive Reduktion: Er schleppt sich nur noch
+            factor *= 0.15f; 
+            Debug.Log("<color=red>[MechDriver] KRITISCHER BEINSCHADEN! Der Mech kann sich kaum noch halten.</color>");
+        }
+
+        // 3. Absolutes Minimum (damit er nicht ganz stehen bleibt, außer bei 6 Beinen?)
+        if (destroyedLegsCount >= 4) factor = 0.08f;
+        if (destroyedLegsCount >= 5) factor = 0.03f; 
+        if (destroyedLegsCount >= 6) factor = 0f;    // Komplett immobil
+
+        maxSpeed = baseMaxSpeed * Mathf.Max(0f, factor);
+        Debug.Log($"[MechDriver] Neue Höchstgeschwindigkeit: {maxSpeed} (Beine weg: {destroyedLegsCount})");
     }
 
     void Update()
@@ -54,7 +93,12 @@ public class MechDriver : MonoBehaviour
         float stress = stepManager != null ? stepManager.currentSystemStress : 0f;
         if (stress < stressDeadzone) stress = 0f;
 
-        float targetSpeed = Mathf.Lerp(maxSpeed, minSpeed, stress);
+        // Wenn er gestunnt ist (von MechBossHealth gesteuert), sollte er eigentlich stehen bleiben.
+        // Das macht der Behavior Tree meistens schon, aber wir können hier sicherheitshalber drosseln.
+        
+        float currentTargetMax = maxSpeed;
+        
+        float targetSpeed = Mathf.Lerp(currentTargetMax, minSpeed, stress);
         agent.speed = Mathf.Lerp(agent.speed, targetSpeed, Time.deltaTime * brakingForce);
     }
 

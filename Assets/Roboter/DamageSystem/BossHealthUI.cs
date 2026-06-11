@@ -26,25 +26,48 @@ public class BossHealthUI : MonoBehaviour
             bossHealth = FindAnyObjectByType<MechBossHealth>();
         }
 
+        if (bossHealth != null)
+        {
+            bossHealth.OnHealthChanged += HandleHealthChanged;
+            // Initialer Stand
+            HandleHealthChanged(bossHealth.currentHealth, bossHealth.maxHealth);
+        }
+
         if (frontHealthBar != null) frontHealthBar.fillAmount = 1f;
         if (backHealthBar != null) backHealthBar.fillAmount = 1f;
     }
 
+    private void OnDestroy()
+    {
+        if (bossHealth != null)
+        {
+            bossHealth.OnHealthChanged -= HandleHealthChanged;
+        }
+    }
+
+    private void HandleHealthChanged(int current, int max)
+    {
+        float targetPercentage = Mathf.Clamp01((float)current / max);
+        
+        if (frontHealthBar != null)
+        {
+            if (targetPercentage < frontHealthBar.fillAmount)
+            {
+                frontHealthBar.fillAmount = targetPercentage;
+                delayTimer = catchUpDelay;
+            }
+            else
+            {
+                frontHealthBar.fillAmount = targetPercentage;
+            }
+        }
+    }
+
     void Update()
     {
-        if (bossHealth == null || frontHealthBar == null || backHealthBar == null) return;
+        if (frontHealthBar == null || backHealthBar == null) return;
 
-        // 1. Ziel-Gesundheit in Prozent berechnen (0.0 bis 1.0)
-        float targetPercentage = Mathf.Clamp01((float)bossHealth.currentHealth / bossHealth.maxHealth);
-        
-        // 2. Front Bar (Rot) sofort anpassen, wenn Schaden genommen wird
-        if (targetPercentage < frontHealthBar.fillAmount)
-        {
-            frontHealthBar.fillAmount = targetPercentage;
-            delayTimer = catchUpDelay; // Timer für die hintere Leiste resetten
-        }
-
-        // 3. Back Bar (Weiß/Gelb) verzögert und weich hinterherziehen (AAA-Effekt)
+        // Back Bar (Weiß/Gelb) verzögert und weich hinterherziehen (AAA-Effekt)
         if (delayTimer > 0)
         {
             delayTimer -= Time.deltaTime;
@@ -53,7 +76,6 @@ public class BossHealthUI : MonoBehaviour
         {
             if (backHealthBar.fillAmount > frontHealthBar.fillAmount)
             {
-                // SmoothDamp / Lerp für das softe "Nachrutschen"
                 backHealthBar.fillAmount = Mathf.Lerp(backHealthBar.fillAmount, frontHealthBar.fillAmount, Time.deltaTime * catchUpSpeed);
             }
         }

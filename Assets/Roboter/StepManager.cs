@@ -57,6 +57,12 @@ public class StepManager : MonoBehaviour
     [Tooltip("Read-Only: Wird vom MechDriver ausgelesen")]
     public float currentSystemStress = 0f;
 
+    [Header("Stun & Struggle (Arc Raiders Style)")]
+    [Tooltip("Wie weit spreizen sich die Beine nach außen im Stun?")]
+    [SerializeField] private float stunSplayFactor = 1.6f;
+    [Tooltip("Verlangsamung der Schritt-Animation pro zerstörtem Bein (0.2 = 20% langsamer)")]
+    [SerializeField] private float struggleSlowdownPerLeg = 0.25f;
+
     [Header("Curve Prediction & Reach")]
     [SerializeField] private float velocitySmoothTime = 0.15f;
     [SerializeField] private float rotationSmoothTime = 0.15f;
@@ -84,6 +90,8 @@ public class StepManager : MonoBehaviour
 
     private float startTime;
     private float lastStepStartTime;
+    private MechBossHealth bossHealth;
+    private int destroyedCount = 0;
 
     void Start()
     {
@@ -93,11 +101,27 @@ public class StepManager : MonoBehaviour
 
         // Fallback falls nicht zugewiesen
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
+        
+        bossHealth = GetComponentInParent<MechBossHealth>();
+        if (bossHealth != null)
+        {
+            MechBossHealth.OnLegDestroyed += (count) => {
+                destroyedCount = count;
+                // Sofort Panik-Schritte für alle Beine auslösen beim Stun
+                ForceSplaySteps();
+            };
+        }
 
         SnapAllLegsToGround();
         lastBodyPosition = transform.position;
         lastBodyRotation = transform.rotation;
         startTime = Time.time;
+    }
+
+    private void OnDestroy()
+    {
+        // Da es ein statisches Event sein könnte oder wir sicher gehen wollen
+        // MechBossHealth.OnLegDestroyed -= ... (müsste eine Methode sein)
     }
 
     void Update()
@@ -109,6 +133,18 @@ public class StepManager : MonoBehaviour
 
         lastBodyPosition = transform.position;
         lastBodyRotation = transform.rotation;
+    }
+
+    private void ForceSplaySteps()
+    {
+        // Wenn ein Bein zerstört wird, sollen alle anderen sofort nach außen "ausweichen"
+        for (int i = 0; i < legs.Count; i++)
+        {
+            if (legs[i].isSteppingActive || legs[i].isDestroyed) continue;
+            
+            CalculateNextStepTarget(i, out Vector3 nextPos, out Quaternion nextRot);
+            TryExecuteStep(i, nextPos, nextRot);
+        }
     }
 
     void InitializeLegData()
@@ -265,7 +301,12 @@ public class StepManager : MonoBehaviour
         if (leg.isDestroyed) return false;
 
         float distance = Vector3.Distance(leg.targetTransform.position, stepPos);
-        float dynamicDuration = Mathf.Clamp(distance / stepSpeed, minStepDuration, maxStepDuration);
+        
+        // Struggle Factor: Schritte werden langsamer, je mehr Beine fehlen
+        float speedMult = 1f / (1f + (destroyedCount * struggleSlowdownPerLeg));
+        float currentStepSpeed = stepSpeed * speedMult;
+        
+        float dynamicDuration = Mathf.Clamp(distance / currentStepSpeed, minStepDuration, maxStepDuration * 2f);
 
         leg.legStepper.StartStep(stepPos, stepRot, stepHeight, dynamicDuration);
         leg.isSteppingActive = true;
@@ -289,14 +330,28 @@ public class StepManager : MonoBehaviour
         float futureYawOffset = smoothedYawSpeed * currentPrediction;
         Quaternion futureBodyRot = transform.rotation * Quaternion.Euler(0f, futureYawOffset, 0f);
 
-        Vector3 idealFutureRest = futureBodyPos + (futureBodyRot * legs[legIndex].restPositionOffset);
+        Vector3 idealFutureRest = futureBodyPos + (futureBodyRot * GetLegOffset(legIndex));
 
         GetGroundInfo(idealFutureRest, legIndex, out outPos, out outRot);
     }
 
+    private Vector3 GetLegOffset(int legIndex)
+    {
+        Vector3 offset = legs[legIndex].restPositionOffset;
+        
+        // SPLAY EFFEKT: Wenn gestunnt, drückt der Mech die Beine nach außen
+        if (bossHealth != null && bossHealth.IsStunned)
+        {
+            offset.x *= stunSplayFactor;
+            offset.z *= stunSplayFactor;
+        }
+        
+        return offset;
+    }
+
     Vector3 GetIdealRestPosition(int legIndex)
     {
-        return transform.position + transform.rotation * legs[legIndex].restPositionOffset;
+        return transform.position + transform.rotation * GetLegOffset(legIndex);
     }
 
     void GetGroundInfo(Vector3 p, int legIndex, out Vector3 outPos, out Quaternion outRot)

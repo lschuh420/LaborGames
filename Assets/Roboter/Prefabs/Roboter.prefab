@@ -7294,7 +7294,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb9f79c62afc96c46990c90594120a26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxLegHealth: 300
+  maxLegHealth: 600
   currentLegHealth: 0
   isDestroyed: 0
   legMesh: {fileID: 1236122557443502203}
@@ -12422,7 +12422,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb9f79c62afc96c46990c90594120a26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxLegHealth: 300
+  maxLegHealth: 600
   currentLegHealth: 0
   isDestroyed: 0
   legMesh: {fileID: 5861245214567454405}
@@ -34257,6 +34257,8 @@ MonoBehaviour:
   impactStrength: 0.15
   springStiffness: 12
   damping: 5
+  stunHeightFactor: 0.25
+  stunSmoothTime: 0.8
   rootTransform: {fileID: 5555175823714312440}
 --- !u!1 &2053029961069163279
 GameObject:
@@ -63004,7 +63006,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb9f79c62afc96c46990c90594120a26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxLegHealth: 300
+  maxLegHealth: 600
   currentLegHealth: 0
   isDestroyed: 0
   legMesh: {fileID: 3022204149745792126}
@@ -85358,7 +85360,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb9f79c62afc96c46990c90594120a26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxLegHealth: 300
+  maxLegHealth: 600
   currentLegHealth: 0
   isDestroyed: 0
   legMesh: {fileID: 7623104924182877759}
@@ -99741,7 +99743,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb9f79c62afc96c46990c90594120a26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxLegHealth: 300
+  maxLegHealth: 600
   currentLegHealth: 0
   isDestroyed: 0
   legMesh: {fileID: 82656490521115313}
@@ -99911,7 +99913,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb9f79c62afc96c46990c90594120a26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxLegHealth: 300
+  maxLegHealth: 600
   currentLegHealth: 0
   isDestroyed: 0
   legMesh: {fileID: 2214770873077389960}
@@ -146789,6 +146791,7 @@ GameObject:
   - component: {fileID: 3942607623425804614}
   - component: {fileID: 5823335488995838493}
   - component: {fileID: 5307982476412487074}
+  - component: {fileID: 8597230943294749750}
   m_Layer: 3
   m_Name: Robot_Root
   m_TagString: Untagged
@@ -146892,13 +146895,15 @@ MonoBehaviour:
   maxStepDuration: 1.5
   panicDistance: 2.1
   currentSystemStress: 0
+  stunSplayFactor: 1.6
+  struggleSlowdownPerLeg: 0.25
   velocitySmoothTime: 0.15
   rotationSmoothTime: 0.12
   predictionSeconds: 0.285
   frontLegReachMultiplier: 1.442
   groundLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   rayStartHeight: 3
   rayDistance: 8
   footGroundClearance: 0.02
@@ -147086,9 +147091,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73120da176aa2ae4fa915e5af2658c49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 2500
+  maxHealth: 4000
   currentHealth: 0
   armorHitSound: {fileID: 8300000, guid: 5decc80985716fd41959ae9de4c6e579, type: 3}
   stunSound: {fileID: 0}
   deathSound: {fileID: 0}
   audioVolume: 0.638
+  legDestroyedStunDuration: 4
+  deathExplosionPrefab: {fileID: 8572714845552320151, guid: d196b1db93e5f934aa5015e70ca02857, type: 3}
+  deathExplosionCount: 6
+--- !u!114 &8597230943294749750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9212041021688382950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49e82e9ccde7896479a0636f2dbeb38e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bossHealth: {fileID: 0}
+  offset: {x: 0, y: 5.5, z: 0}
+  size: {x: 3, y: 0.12}
+  healthColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  backBarColor: {r: 1, g: 1, b: 1, a: 0.8}
+  backgroundColor: {r: 0, g: 0, b: 0, a: 0.6}
+  catchUpSpeed: 2
+  catchUpDelay: 0.5

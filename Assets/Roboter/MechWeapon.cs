@@ -17,20 +17,43 @@ public class MechWeapon : MonoBehaviour
     public AudioClip fireSound;
     [SerializeField, Range(0f, 1f)] private float fireVolume = 0.5f;
 
+    [Header("Burst Settings")]
+    [Tooltip("Wie viele Schüsse in einer Salve?")]
+    public int burstSize = 15;
+    [Tooltip("Pause zwischen zwei Salven in Sekunden")]
+    public float reloadTime = 1.3f;
+
     public float fireRate = 0.3f;
     private float nextFireTime = 0f;
     private int currentMuzzleIndex = 0;
+    private int shotsFiredInBurst = 0;
+    private float burstCooldownEndTime = 0f;
 
     private bool isFiring = false;
     private float lastFireCommandTime = 0f;
+    private TurretController turretController;
 
     private void Start()
     {
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
+        turretController = GetComponentInParent<TurretController>();
     }
 
     public void FireAtTarget()
     {
+        // 1. Pause zwischen Salven prüfen
+        if (Time.time < burstCooldownEndTime)
+        {
+            // Debug.Log("[MechWeapon] Nachladen...");
+            return;
+        }
+
+        // 2. Nur schießen, wenn der Turm auch wirklich auf das Ziel ausgerichtet ist (Toleranz-Check)
+        if (turretController != null && !turretController.IsAimedAtTarget)
+        {
+            return;
+        }
+
         float currentTime = Time.time;
         
         if (!isFiring || (currentTime - lastFireCommandTime > 1.0f))
@@ -47,6 +70,21 @@ public class MechWeapon : MonoBehaviour
         if (Time.time < nextFireTime) return;
         if (bulletPrefab == null || muzzlePoints.Length == 0) return;
 
+        // 3. Salven-Logik anwenden
+        ExecuteShoot();
+
+        shotsFiredInBurst++;
+        if (shotsFiredInBurst >= burstSize)
+        {
+            shotsFiredInBurst = 0;
+            burstCooldownEndTime = Time.time + reloadTime;
+            isFiring = false; // Telegraphing für die nächste Salve neu triggern
+            Debug.Log($"<color=white>[MechWeapon] Salve beendet ({burstSize} Schuss). Pause für {reloadTime}s.</color>");
+        }
+    }
+
+    private void ExecuteShoot()
+    {
         nextFireTime = Time.time + fireRate;
 
         Transform activeMuzzle = muzzlePoints[currentMuzzleIndex];

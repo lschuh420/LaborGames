@@ -17,15 +17,21 @@ public class TurretController : MonoBehaviour
     [HideInInspector] public bool usePositionTarget;
 
     [Header("Turret Rotation Speed")]
-    [Tooltip("Maximale Drehgeschwindigkeit des Turms in Grad/Sekunde. 15-25 = schwerer Mech, 45+ = leichter Turm")]
-    [SerializeField] private float maxYawSpeed = 20f;
+    [Tooltip("Maximale Drehgeschwindigkeit des Turms in Grad/Sekunde. 40 = Kompetent, 20 = Träge")]
+    [SerializeField] private float maxYawSpeed = 40f;
     [Tooltip("Wie weich/träge der Turm beschleunigt und abbremst")]
-    [SerializeField] private float yawSmoothTime = 0.4f;
+    [SerializeField] private float yawSmoothTime = 0.2f;
 
     [Header("Cannon Pitch Speed")]
     [SerializeField] private float pitchSpeed = 45f;
-    [SerializeField] private float minPitch = -15f;
-    [SerializeField] private float maxPitch = 25f;
+    [SerializeField] private float minPitch = -20f;
+    [SerializeField] private float maxPitch = 45f;
+
+    [Header("Precision Settings")]
+    [Tooltip("Winkel-Toleranz: Ab wie viel Grad Abweichung gilt das Ziel als 'anvisiert'?")]
+    [SerializeField] private float aimTolerance = 3.5f;
+
+    public bool IsAimedAtTarget { get; private set; }
 
     [Header("Audio (Surgical)")]
     public AudioSource audioSource; // EXPLICIT
@@ -35,6 +41,8 @@ public class TurretController : MonoBehaviour
 
     private float currentYawVelocity;
     private float currentPitchVel;
+    private float currentYawDiff;
+    private float currentPitchDiff;
 
     void Start()
     {
@@ -68,15 +76,20 @@ public class TurretController : MonoBehaviour
         {
             HandleYawRotation(target.position);
             HandlePitchRotation(target.position);
+            
+            // Nur wenn BEIDE Achsen im Toleranzbereich sind, gilt das Ziel als anvisiert
+            IsAimedAtTarget = (currentYawDiff <= aimTolerance) && (currentPitchDiff <= aimTolerance);
         }
         else if (usePositionTarget)
         {
             HandleYawRotation(positionTarget);
             HandlePitchRotation(positionTarget);
+            IsAimedAtTarget = (currentYawDiff <= aimTolerance) && (currentPitchDiff <= aimTolerance);
         }
         else
         {
             ResetToNeutral();
+            IsAimedAtTarget = false;
         }
 
         UpdateRotationAudio();
@@ -106,18 +119,18 @@ public class TurretController : MonoBehaviour
             float currentPitch = cannonPitchPivot.localEulerAngles.x;
             if (currentPitch > 180f) currentPitch -= 360f;
 
-            float newPitch = Mathf.SmoothDampAngle(currentPitch, 0f, ref currentPitchVel, 1f / pitchSpeed);
+            float newPitch = Mathf.SmoothDampAngle(currentPitch, 0f, ref currentPitchVel, 0.2f);
             cannonPitchPivot.localRotation = Quaternion.Euler(newPitch, 0f, 0f);
         }
     }
 
     void HandleYawRotation(Vector3 targetPos)
     {
+        // 1. Ziel-Position in den lokalen Raum des Yaw-Pivot-Elternteils transformieren
+        // Dies berücksichtigt automatisch JEDE Neigung des Körpers (Terrain + Aim Assist)
         Vector3 localTargetPos = turretYawPivot.parent.InverseTransformPoint(targetPos);
-        localTargetPos.y = 0f;
-
-        if (localTargetPos.magnitude < 0.1f) return;
-
+        
+        // Wir betrachten nur die horizontale Ebene für Yaw
         float targetAngle = Mathf.Atan2(localTargetPos.x, localTargetPos.z) * Mathf.Rad2Deg;
 
         float currentAngle = turretYawPivot.localEulerAngles.y;
@@ -125,22 +138,31 @@ public class TurretController : MonoBehaviour
 
         float newAngle = Mathf.SmoothDampAngle(currentAngle, targetAngle, ref currentYawVelocity, yawSmoothTime, maxYawSpeed);
         turretYawPivot.localRotation = Quaternion.Euler(0f, newAngle, 0f);
+
+        currentYawDiff = Mathf.Abs(Mathf.DeltaAngle(newAngle, targetAngle));
     }
 
     void HandlePitchRotation(Vector3 targetPos)
     {
         if (cannonPitchPivot == null) return;
 
-        Vector3 targetDirectionWorld = targetPos - cannonPitchPivot.position;
-        float distance = targetDirectionWorld.magnitude;
-
-        float targetPitchAngle = -Mathf.Atan2(targetDirectionWorld.y, distance) * Mathf.Rad2Deg;
+        // 1. Ziel-Position in den lokalen Raum des Pitch-Pivot-Elternteils (der bereits gedrehte Yaw-Turm!)
+        Vector3 localTargetPos = cannonPitchPivot.parent.InverseTransformPoint(targetPos);
+        
+        // 2. Erforderlichen lokalen Pitch-Winkel berechnen
+        // localTargetPos.z ist "vorne", localTargetPos.y ist "oben" relativ zum Turm
+        float targetPitchAngle = -Mathf.Atan2(localTargetPos.y, localTargetPos.z) * Mathf.Rad2Deg;
+        
+        // 3. Mechanische Limits anwenden
         targetPitchAngle = Mathf.Clamp(targetPitchAngle, minPitch, maxPitch);
 
         float currentPitchAngle = cannonPitchPivot.localEulerAngles.x;
         if (currentPitchAngle > 180f) currentPitchAngle -= 360f;
 
-        float newPitch = Mathf.SmoothDampAngle(currentPitchAngle, targetPitchAngle, ref currentPitchVel, 1f / pitchSpeed);
+        // 4. Weich ansteuern
+        float newPitch = Mathf.SmoothDampAngle(currentPitchAngle, targetPitchAngle, ref currentPitchVel, 0.12f);
         cannonPitchPivot.localRotation = Quaternion.Euler(newPitch, 0f, 0f);
+        
+        currentPitchDiff = Mathf.Abs(Mathf.DeltaAngle(newPitch, targetPitchAngle));
     }
 }
