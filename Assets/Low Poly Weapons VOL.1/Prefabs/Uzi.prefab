@@ -194,6 +194,12 @@ MonoBehaviour:
   weaponName: Uzi
   damage: 1
   fireRate: 0.3
+  magazineSize: 25
+  reloadTime: 1.5
+  currentAmmo: 0
+  overrideGripAlignment: 0
+  gripPositionOffset: {x: 0, y: 0, z: 0}
+  gripRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!65 &8967573758950219796
 BoxCollider:
   m_ObjectHideFlags: 0
