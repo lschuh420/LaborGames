@@ -32,9 +32,19 @@ public class PlayerShooting : MonoBehaviour
     [Tooltip("Diameter of the bullet hole in meters.")]
     public float bulletHoleSize = 0.15f;
 
+    [Header("Reload")]
+    [Tooltip("Key the player presses to manually reload.")]
+    public KeyCode reloadKey = KeyCode.R;
+    [Tooltip("If ON, firing on an empty magazine starts a reload automatically.")]
+    public bool autoReloadWhenEmpty = true;
+
     private Camera playerCamera;
     private float fireCooldown = 0f;
     private WeaponIK weaponIK;
+
+    // Reload state (player-level: only the active weapon can be reloading at a time).
+    private bool isReloading = false;
+    private float reloadTimer = 0f;
 
     void Start()
     {
@@ -48,12 +58,24 @@ public class PlayerShooting : MonoBehaviour
         if (fireCooldown > 0f)
             fireCooldown -= Time.deltaTime;
 
+        // Progress an in-flight reload
+        if (isReloading)
+        {
+            reloadTimer -= Time.deltaTime;
+            if (reloadTimer <= 0f)
+                FinishReload();
+        }
+
         // Switch weapons with Q or Tab
         if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Tab))
             SwitchWeapon();
 
-        // Shoot with left click — only if cooldown is done
-        if (Input.GetMouseButtonDown(0) && fireCooldown <= 0f)
+        // Manual reload
+        if (Input.GetKeyDown(reloadKey))
+            StartReload();
+
+        // Shoot with left click — only if cooldown is done and not reloading
+        if (Input.GetMouseButtonDown(0) && fireCooldown <= 0f && !isReloading)
             Shoot();
     }
 
@@ -122,9 +144,64 @@ public class PlayerShooting : MonoBehaviour
 
     void SwitchWeapon()
     {
+        CancelReload(); // a half-finished reload doesn't carry over to the other gun
         activeSlot = (activeSlot + 1) % equippedWeapons.Length;
         RefreshWeaponVisibility();
         Debug.Log("Switched to slot: " + activeSlot);
+    }
+
+    // ----- Reload -------------------------------------------------------------
+
+    void StartReload()
+    {
+        if (isReloading) return;
+
+        WeaponData data = ActiveWeaponData;
+        if (data == null) return;
+        if (data.currentAmmo >= data.magazineSize) return; // already full
+
+        isReloading = true;
+        reloadTimer = data.reloadTime;
+        Debug.Log("Reloading " + data.weaponName + "...");
+        // TODO: play reload sound / animation here
+    }
+
+    void FinishReload()
+    {
+        isReloading = false;
+
+        WeaponData data = ActiveWeaponData;
+        if (data != null)
+            data.currentAmmo = data.magazineSize;
+    }
+
+    void CancelReload()
+    {
+        isReloading = false;
+        reloadTimer = 0f;
+    }
+
+    // ----- Accessors for the HUD ---------------------------------------------
+
+    public WeaponData ActiveWeaponData
+    {
+        get
+        {
+            if (activeSlot < 0 || activeSlot >= equippedWeapons.Length) return null;
+            if (equippedWeapons[activeSlot] == null) return null;
+            return equippedWeapons[activeSlot].GetComponent<WeaponData>();
+        }
+    }
+
+    public bool IsReloading => isReloading;
+    public float ReloadProgress
+    {
+        get
+        {
+            WeaponData data = ActiveWeaponData;
+            if (!isReloading || data == null || data.reloadTime <= 0f) return 1f;
+            return 1f - (reloadTimer / data.reloadTime);
+        }
     }
 
     void RefreshWeaponVisibility()
@@ -152,6 +229,17 @@ public class PlayerShooting : MonoBehaviour
         else
         {
             Debug.Log($"<color=cyan>[PlayerShooting] KEIN WeaponData auf '{equippedWeapons[activeSlot].name}' gefunden. Nutze Fallback: {damage}</color>");
+        }
+
+        // Ammo / reload gate. Guns without WeaponData fire freely (legacy behaviour).
+        if (data != null)
+        {
+            if (data.currentAmmo <= 0)
+            {
+                if (autoReloadWhenEmpty) StartReload();
+                return; // out of ammo — don't fire
+            }
+            data.currentAmmo--;
         }
 
         float fireRate = data != null ? data.fireRate : 0.2f;

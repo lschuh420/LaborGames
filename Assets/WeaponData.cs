@@ -6,6 +6,20 @@ public class WeaponData : MonoBehaviour
     public int damage = 25;
     public float fireRate = 0.2f;
 
+    [Header("Ammo / Reload")]
+    [Tooltip("How many shots fit in one magazine before a reload is needed.")]
+    public int magazineSize = 12;
+    [Tooltip("Seconds it takes to reload a full magazine.")]
+    public float reloadTime = 1.5f;
+    [Tooltip("Bullets currently left in the magazine. Set automatically at runtime.")]
+    [HideInInspector] public int currentAmmo;
+
+    void Awake()
+    {
+        // Start every gun with a full magazine (works for pre-placed and picked-up weapons).
+        currentAmmo = magazineSize;
+    }
+
     [Header("Grip Alignment (per-weapon override)")]
     [Tooltip("If ON, PlayerShooting uses THIS weapon's offsets below instead of its default " +
              "ones. Leave OFF to use the holder's default alignment.")]
