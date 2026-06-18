@@ -281,6 +281,15 @@ public class PlayerShooting : MonoBehaviour
             bulletScript.speed = bulletSpeed;
         }
 
+        // LaborProjectile-Kugeln müssen den Schützen ignorieren, sonst trifft die
+        // Kugel direkt beim Abschuss den Spieler selbst (Mündung steckt im Körper).
+        LaborProjectile laborBullet = bullet.GetComponent<LaborProjectile>();
+        if (laborBullet != null)
+        {
+            // Schaden des Prefabs beibehalten, aber den Player-Layer ausnehmen
+            laborBullet.Setup(laborBullet.damage, bulletSpeed, LayerMask.NameToLayer("Player"));
+        }
+
         // ====================================================================
         // --- NEU: SOUND-MELDUNG AN DEN ROBOTER SCHICKEN ---
         // ====================================================================

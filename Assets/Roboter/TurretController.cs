@@ -29,9 +29,15 @@ public class TurretController : MonoBehaviour
 
     [Header("Precision Settings")]
     [Tooltip("Winkel-Toleranz: Ab wie viel Grad Abweichung gilt das Ziel als 'anvisiert'?")]
-    [SerializeField] private float aimTolerance = 3.5f;
+    [SerializeField] private float aimTolerance = 2f;
+    [Tooltip("Höhen-Offset auf das Ziel. 1.0 = Brusthöhe statt Füße")]
+    [SerializeField] private float aimHeightOffset = 1.0f;
 
     public bool IsAimedAtTarget { get; private set; }
+
+    // Exakter Punkt, auf den der Turm zielt -> die Waffen richten die Kugeln genau hierauf aus
+    public Vector3 AimPoint { get; private set; }
+    public bool HasAimPoint { get; private set; }
 
     [Header("Audio (Surgical)")]
     public AudioSource audioSource; // EXPLICIT
@@ -74,14 +80,22 @@ public class TurretController : MonoBehaviour
     {
         if (target != null)
         {
-            HandleYawRotation(target.position);
-            HandlePitchRotation(target.position);
-            
+            // Auf Brusthöhe zielen statt auf die Füße
+            Vector3 aimPos = target.position + Vector3.up * aimHeightOffset;
+            AimPoint = aimPos;
+            HasAimPoint = true;
+
+            HandleYawRotation(aimPos);
+            HandlePitchRotation(aimPos);
+
             // Nur wenn BEIDE Achsen im Toleranzbereich sind, gilt das Ziel als anvisiert
             IsAimedAtTarget = (currentYawDiff <= aimTolerance) && (currentPitchDiff <= aimTolerance);
         }
         else if (usePositionTarget)
         {
+            AimPoint = positionTarget;
+            HasAimPoint = true;
+
             HandleYawRotation(positionTarget);
             HandlePitchRotation(positionTarget);
             IsAimedAtTarget = (currentYawDiff <= aimTolerance) && (currentPitchDiff <= aimTolerance);
@@ -90,6 +104,7 @@ public class TurretController : MonoBehaviour
         {
             ResetToNeutral();
             IsAimedAtTarget = false;
+            HasAimPoint = false;
         }
 
         UpdateRotationAudio();

@@ -66,9 +66,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void Update()
     {
-        // TEST: remove later. Press K to take 15 damage.
-        if (Input.GetKeyDown(KeyCode.K)) TakeDamage(15);
-
         if (isDead || currentHealth >= maxHealth) return;
 
         timeSinceLastHit += Time.deltaTime;

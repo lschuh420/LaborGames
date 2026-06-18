@@ -28,13 +28,20 @@ public class MechBullet : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        // 1. Mechanik: Schaden am Spieler (wie gehabt)
-        PlayerMovement player = other.GetComponentInParent<PlayerMovement>();
-        bool hitPlayer = player != null;
+        // 1. Mechanik: Schaden am Spieler
+        // Gleiche Logik wie das Energiefeld: IDamageable direkt am getroffenen
+        // Collider suchen (Parent zuerst, sonst Kinder). PlayerHealth implementiert IDamageable.
+        IDamageable target = other.GetComponentInParent<IDamageable>();
+        if (target == null) target = other.GetComponentInChildren<IDamageable>();
+
+        // Nur der Spieler soll von Roboter-Kugeln Schaden bekommen (nicht der Roboter selbst)
+        PlayerHealth playerHealth = target as PlayerHealth;
+        bool hitPlayer = playerHealth != null;
 
         if (hitPlayer)
         {
-            Debug.Log($"[MechBullet] SPIELER GETROFFEN!");
+            Debug.Log($"[MechBullet] SPIELER GETROFFEN! Schaden: {damage}");
+            playerHealth.TakeDamage(damage);
         }
 
         // ====================================================================

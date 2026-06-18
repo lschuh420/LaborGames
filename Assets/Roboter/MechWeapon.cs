@@ -23,6 +23,10 @@ public class MechWeapon : MonoBehaviour
     [Tooltip("Pause zwischen zwei Salven in Sekunden")]
     public float reloadTime = 1.3f;
 
+    [Header("Accuracy")]
+    [Tooltip("Zufällige Streuung in Grad. 0 = perfekt genau, höher = ungenauer")]
+    public float spreadAngle = 0.75f;
+
     public float fireRate = 0.3f;
     private float nextFireTime = 0f;
     private int currentMuzzleIndex = 0;
@@ -89,7 +93,26 @@ public class MechWeapon : MonoBehaviour
 
         Transform activeMuzzle = muzzlePoints[currentMuzzleIndex];
 
-        Instantiate(bulletPrefab, activeMuzzle.position, activeMuzzle.rotation);
+        // Kugel direkt auf den Zielpunkt des Turms ausrichten (statt nur Mündungs-Richtung).
+        // Das eliminiert den seitlichen Versatz der Mündungen (Parallaxe) -> trifft genau.
+        Quaternion fireRotation = activeMuzzle.rotation;
+        if (turretController != null && turretController.HasAimPoint)
+        {
+            Vector3 dir = turretController.AimPoint - activeMuzzle.position;
+            if (dir.sqrMagnitude > 0.0001f)
+                fireRotation = Quaternion.LookRotation(dir);
+        }
+
+        // Kleine zufällige Streuung, damit es nicht 100% pixelgenau ist
+        if (spreadAngle > 0f)
+        {
+            fireRotation *= Quaternion.Euler(
+                Random.Range(-spreadAngle, spreadAngle),
+                Random.Range(-spreadAngle, spreadAngle),
+                0f);
+        }
+
+        Instantiate(bulletPrefab, activeMuzzle.position, fireRotation);
 
         if (muzzleFlashes != null && muzzleFlashes.Length > currentMuzzleIndex)
         {

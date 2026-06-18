@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class MechDefenseField : MonoBehaviour
 {
@@ -57,17 +58,24 @@ public class MechDefenseField : MonoBehaviour
             audioSource.PlayOneShot(novaExplosionSound, audioVolume);
         }
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, fieldRadius);
+        Collider[] hits = Physics.OverlapSphere(transform.position, fieldRadius, ~0, QueryTriggerInteraction.Collide);
         Transform root = transform.root; // Referenz auf den eigenen Roboter-Stamm
+
+        // Verhindert, dass ein Ziel mit mehreren Collidern mehrfach Schaden bekommt
+        HashSet<IDamageable> alreadyHit = new HashSet<IDamageable>();
 
         foreach (Collider hit in hits)
         {
             // EIGENSCHUTZ: Wenn der getroffene Collider zum eigenen Roboter gehört, ignorieren
             if (hit.transform.root == root) continue;
 
+            // IDamageable zuerst in den Parents suchen, sonst in den Kindern
             IDamageable target = hit.GetComponentInParent<IDamageable>();
-            if (target != null)
+            if (target == null) target = hit.GetComponentInChildren<IDamageable>();
+
+            if (target != null && alreadyHit.Add(target))
             {
+                Debug.Log($"<color=cyan>[MechDefenseField] Nova trifft {hit.transform.root.name} für {damage} Schaden.</color>");
                 target.TakeDamage(damage);
             }
         }
