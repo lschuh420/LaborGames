@@ -25,6 +25,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public event Action<int, int> OnHealthChanged;
     public static event Action OnPlayerDeath;
 
+    [Header("Debug / Testing")]
+    [Tooltip("Wenn aktiv, kann der Spieler keinen Schaden nehmen. Zur Laufzeit mit der Taste K umschaltbar.")]
+    public bool godMode = false;
+    [Tooltip("Taste zum Umschalten des God-Mode (Unsterblichkeit) zum Testen")]
+    public KeyCode godModeToggleKey = KeyCode.K;
+
     private float timeSinceLastHit;
     private float regenAccumulator; // sammelt Bruchteile von HP für glatte Regeneration
     private bool isDead = false;
@@ -45,6 +51,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public void TakeDamage(int damageAmount)
     {
         if (isDead) return;
+        if (godMode) return; // Unsterblichkeit zum Testen aktiv
 
         currentHealth -= damageAmount;
         timeSinceLastHit = 0f;     // Regen-Timer zurücksetzen
@@ -66,6 +73,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void Update()
     {
+        // God-Mode zum Testen umschalten
+        if (Input.GetKeyDown(godModeToggleKey))
+        {
+            godMode = !godMode;
+            Debug.Log($"<color=cyan><b>[Player] God-Mode: {(godMode ? "AN (unsterblich)" : "AUS")}</b></color>");
+        }
+
         if (isDead || currentHealth >= maxHealth) return;
 
         timeSinceLastHit += Time.deltaTime;

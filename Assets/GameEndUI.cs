@@ -70,7 +70,13 @@ public class GameEndUI : MonoBehaviour
 
         victoryPanel.SetActive(true);
         PlaySound(victorySound);
-        EnterEndState();
+
+        // Bewusst KEINE Pause: Der Spieler soll sich weiter bewegen und den
+        // explodierenden Roboter sehen. Der Cursor wird aber sichtbar gemacht,
+        // damit der Restart-Button oben rechts anklickbar ist (WASD-Bewegung
+        // funktioniert weiterhin, auch bei entsperrtem Cursor).
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     private void EnterEndState()
@@ -156,7 +162,12 @@ public class GameEndUI : MonoBehaviour
 
     private GameObject BuildVictoryPanel(Transform parent)
     {
-        GameObject panel = CreateFullscreenPanel("VictoryPanel", parent, new Color(0.08f, 0.22f, 0.45f, 0.9f));
+        // Kein blaues Overlay: transparenter Hintergrund, nur die Schrift bleibt sichtbar,
+        // damit der Spieler weiter spielen und den Roboter explodieren sehen kann.
+        GameObject panel = CreateFullscreenPanel("VictoryPanel", parent, new Color(0f, 0f, 0f, 0f));
+        // Hintergrund darf keine Klicks abfangen (sonst wäre Maus/Spiel blockiert).
+        Image bg = panel.GetComponent<Image>();
+        if (bg != null) bg.raycastTarget = false;
 
         CreateText(panel.transform, "Crown", "#1", // kleine Krone/Rang
             new Color(1f, 0.85f, 0.2f), 90, FontStyle.Bold,
@@ -170,7 +181,9 @@ public class GameEndUI : MonoBehaviour
             new Color(1f, 1f, 1f), 40, FontStyle.Normal,
             new Vector2(0.5f, 0.46f), new Vector2(1200, 80));
 
-        CreatePlayAgainButton(panel.transform, new Color(0.2f, 0.55f, 0.9f));
+        // Kleiner Restart-Button oben rechts, damit der Rest der Sicht frei bleibt.
+        CreateRestartButton(panel.transform, new Color(0.2f, 0.55f, 0.9f),
+            new Vector2(1f, 1f), new Vector2(-150, -60), new Vector2(240, 70), 34);
 
         return panel;
     }
@@ -248,6 +261,50 @@ public class GameEndUI : MonoBehaviour
         txt.text = "PLAY AGAIN";
         txt.color = Color.white;
         txt.fontSize = 46;
+        txt.fontStyle = FontStyle.Bold;
+        txt.alignment = TextAnchor.MiddleCenter;
+        txt.font = GetBuiltinFont();
+
+        RectTransform lrt = label.GetComponent<RectTransform>();
+        lrt.anchorMin = Vector2.zero;
+        lrt.anchorMax = Vector2.one;
+        lrt.offsetMin = Vector2.zero;
+        lrt.offsetMax = Vector2.zero;
+    }
+
+    // Flexibel platzierbarer Restart-Button (für die Ecke oben rechts beim Victory-Screen).
+    private void CreateRestartButton(Transform parent, Color buttonColor,
+        Vector2 anchor, Vector2 anchoredPosition, Vector2 size, int fontSize)
+    {
+        GameObject btnGO = new GameObject("RestartButton");
+        btnGO.transform.SetParent(parent, false);
+
+        Image img = btnGO.AddComponent<Image>();
+        img.color = buttonColor;
+
+        Button btn = btnGO.AddComponent<Button>();
+        btn.targetGraphic = img;
+        ColorBlock cb = btn.colors;
+        cb.normalColor = Color.white;
+        cb.highlightedColor = new Color(1.15f, 1.15f, 1.15f, 1f);
+        cb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        cb.fadeDuration = 0.08f;
+        btn.colors = cb;
+        btn.onClick.AddListener(RestartGame);
+
+        RectTransform rt = btnGO.GetComponent<RectTransform>();
+        rt.anchorMin = anchor;
+        rt.anchorMax = anchor;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = anchoredPosition;
+        rt.sizeDelta = size;
+
+        GameObject label = new GameObject("Label");
+        label.transform.SetParent(btnGO.transform, false);
+        Text txt = label.AddComponent<Text>();
+        txt.text = "RESTART";
+        txt.color = Color.white;
+        txt.fontSize = fontSize;
         txt.fontStyle = FontStyle.Bold;
         txt.alignment = TextAnchor.MiddleCenter;
         txt.font = GetBuiltinFont();
