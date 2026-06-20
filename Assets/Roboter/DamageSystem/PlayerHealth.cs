@@ -107,6 +107,27 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (audioSource != null && deathSound != null)
             audioSource.PlayOneShot(deathSound, 1f);
 
+        // Bewegung & Input sofort deaktivieren, damit der Spieler sich nicht mehr bewegen kann
+        MonoBehaviour tpc = GetComponent("ThirdPersonController") as MonoBehaviour;
+        if (tpc != null) tpc.enabled = false;
+
+        MonoBehaviour inputs = GetComponent("StarterAssetsInputs") as MonoBehaviour;
+        if (inputs != null) inputs.enabled = false;
+
+        // Animator anhalten, damit der Charakter nicht auf der Stelle weiterläuft
+        Animator anim = GetComponent<Animator>();
+        if (anim != null)
+        {
+            anim.SetFloat("Speed", 0f);
+            anim.SetFloat("MotionSpeed", 0f);
+        }
+
+        // Verzögerung, damit das Energiefeld sichtbar den Spieler tötet
+        Invoke(nameof(TriggerDeathEvent), 2.5f);
+    }
+
+    private void TriggerDeathEvent()
+    {
         OnPlayerDeath?.Invoke();
     }
 }

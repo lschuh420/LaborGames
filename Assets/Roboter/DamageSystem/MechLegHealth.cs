@@ -10,6 +10,8 @@ public class MechLegHealth : MonoBehaviour
     [Header("Visuals & Effects")]
     public GameObject legMesh; // Das Mesh, das abgetrennt wird
     public ParticleSystem explosionPrefab;
+    [Tooltip("Continuous sparks effect that stays on the broken joint. If empty, a procedural one is created.")]
+    public GameObject continuousSparksPrefab;
     [Tooltip("Die gelbe Kugel (Schwachstelle), die bei Zerstörung verschwinden soll")]
     public GameObject weakSpotMesh;
 
@@ -62,10 +64,28 @@ public class MechLegHealth : MonoBehaviour
 
         Debug.Log("<color=orange>[LegHealth] BOOM! Bein weg!</color>");
 
-        // Bein-Zerstörung Sound
-        if (audioSource != null && legDestroyedSound != null)
+        // Bein-Zerstörung Sound (Lauter und präsenter!)
+        if (legDestroyedSound != null)
         {
-            audioSource.PlayOneShot(legDestroyedSound, 1.0f);
+            // 1. Eigener AudioSource spawnen, damit er laut genug ist (Halb 3D)
+            GameObject tempAudioObj = new GameObject("LegDestroySound_Loud");
+            tempAudioObj.transform.position = transform.position;
+            AudioSource tempSource = tempAudioObj.AddComponent<AudioSource>();
+            tempSource.clip = legDestroyedSound;
+            tempSource.volume = 1.0f; // Max volume
+            tempSource.spatialBlend = 0.5f; // Halb 2D für bessere Hörbarkeit
+            tempSource.minDistance = 15f;
+            tempSource.maxDistance = 100f;
+            tempSource.Play();
+            tempSource.PlayOneShot(legDestroyedSound, 1.0f); // Nochmals drüberlegen für extremen Punch
+            Destroy(tempAudioObj, legDestroyedSound.length + 0.5f);
+            
+            // 2. Zur Sicherheit auch nochmal den regulären abspielen (Stacking)
+            if (audioSource != null)
+            {
+                audioSource.PlayOneShot(legDestroyedSound, 1.0f);
+                audioSource.PlayOneShot(legDestroyedSound, 1.0f); // Noch eine Ebene!
+            }
         }
 
         // 0. Schwachstelle ausblenden
@@ -120,10 +140,71 @@ public class MechLegHealth : MonoBehaviour
             Instantiate(explosionPrefab, transform.position, Quaternion.identity);
         }
 
+        // 4.5. Kontinuierliche Funken aus dem kaputten Gelenk spawnen
+        SpawnContinuousSparks();
+
         // 5. Boss informieren
         if (bossMainHealth != null)
         {
             bossMainHealth.ReportLegDestroyed();
+        }
+    }
+
+    private void SpawnContinuousSparks()
+    {
+        Vector3 spawnPos = transform.position;
+        Transform spawnParent = transform;
+
+        // Das Knie-Gelenk ist vermutlich da, wo der Weakspot saß!
+        if (weakSpotMesh != null)
+        {
+            spawnPos = weakSpotMesh.transform.position;
+            spawnParent = weakSpotMesh.transform.parent != null ? weakSpotMesh.transform.parent : transform;
+        }
+
+        if (continuousSparksPrefab != null)
+        {
+            GameObject sparks = Instantiate(continuousSparksPrefab, spawnPos, Quaternion.identity, spawnParent);
+        }
+        else
+        {
+            // Procedural Sparks anpassen: dünner, kleiner, weiß und am Knie!
+            GameObject sparksObj = new GameObject("ProceduralSparks");
+            sparksObj.transform.SetParent(spawnParent);
+            sparksObj.transform.position = spawnPos;
+
+            ParticleSystem ps = sparksObj.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.duration = 1f;
+            main.loop = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.2f, 0.4f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(2f, 8f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.01f, 0.04f); // Viel kleiner und dünner
+            main.startColor = Color.white; // Weiße Funken
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.gravityModifier = 1.5f;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 15f; // Weniger intensiv
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.05f; // Sehr kleiner Radius, damit sie exakt aus einem Punkt kommen
+
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Stretch;
+            renderer.lengthScale = 6f; // Etwas mehr Stretch für den "schnellen Funken"-Look
+            
+            Shader pShader = Shader.Find("Particles/Standard Unlit");
+            if (pShader != null)
+            {
+                Material pMat = new Material(pShader);
+                if (pMat.HasProperty("_EmissionColor"))
+                {
+                    pMat.SetColor("_EmissionColor", Color.white * 1.5f); // Leichtes Leuchten
+                }
+                renderer.material = pMat;
+            }
         }
     }
 }
