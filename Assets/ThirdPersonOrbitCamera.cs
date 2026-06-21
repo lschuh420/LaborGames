@@ -23,12 +23,20 @@ public class ThirdPersonOrbitCamera : MonoBehaviour
     public float maxDistance = 9f;
     public float zoomSpeed = 2.0f;
 
+    [Header("Collision")]
+    public LayerMask collisionMask = ~0;     // what the camera collides with (set Player layer OFF in the Inspector)
+    public float cameraRadius = 0.25f;       // thickness of the camera probe
+    public float collisionBuffer = 0.2f;     // how far to stay off the wall
+    public float collisionPullInSpeed = 0f;  // 0 = snap in instantly; >0 = smooth in
+    public float collisionPushOutSpeed = 8f; // how fast to return to full distance
+
     private float yaw;
     private float pitch;
 
     private Vector3 posVel;
     private float yawVel;
     private float pitchVel;
+    private float currentDistance;
 
     void Start()
     {
@@ -51,6 +59,8 @@ public class ThirdPersonOrbitCamera : MonoBehaviour
         yaw = e.y;
         pitch = pivot.localEulerAngles.x;
         if (pitch > 180f) pitch -= 360f;
+
+        currentDistance = distance;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -90,11 +100,28 @@ public class ThirdPersonOrbitCamera : MonoBehaviour
         float smoothPitch = Mathf.SmoothDampAngle(currentPitch, pitch, ref pitchVel, rotationSmoothTime);
         pivot.localRotation = Quaternion.Euler(smoothPitch, 0f, 0f);
 
+        // Resolve wall collision: cast from the pivot back toward the desired camera spot.
+        float targetDistance = distance;
+        Vector3 castDir = -pivot.forward; // camera sits behind the pivot (local -Z)
+        if (Physics.SphereCast(pivot.position, cameraRadius, castDir, out RaycastHit hit,
+                               distance, collisionMask, QueryTriggerInteraction.Ignore))
+        {
+            targetDistance = Mathf.Max(minDistance * 0.5f, hit.distance - collisionBuffer);
+        }
+
+        // Pull in fast (avoid clipping), push back out smoothly.
+        if (targetDistance < currentDistance)
+            currentDistance = collisionPullInSpeed <= 0f
+                ? targetDistance
+                : Mathf.MoveTowards(currentDistance, targetDistance, collisionPullInSpeed * Time.deltaTime);
+        else
+            currentDistance = Mathf.MoveTowards(currentDistance, targetDistance, collisionPushOutSpeed * Time.deltaTime);
+
         // Set camera distance (camera is assumed child of pivot)
         Camera cam = Camera.main;
         if (cam != null && cam.transform.parent == pivot)
         {
-            cam.transform.localPosition = new Vector3(0f, 0f, -distance);
+            cam.transform.localPosition = new Vector3(0f, 0f, -currentDistance);
         }
     }
 }
