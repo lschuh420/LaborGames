@@ -4130,7 +4130,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
-  regenDelay: 20
+  regenDelay: 15
   regenRate: 5
   hitSound: {fileID: 0}
   deathSound: {fileID: 0}
