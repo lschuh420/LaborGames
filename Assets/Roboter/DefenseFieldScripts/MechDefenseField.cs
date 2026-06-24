@@ -8,7 +8,7 @@ public class MechDefenseField : MonoBehaviour
     public float fieldRadius = 12f;
 
     [Tooltip("Wie viel Schaden die Nova macht")]
-    public int damage = 25; // Macht ordentlich Wumms!
+    public int damage = 15; // Etwas weniger Wumms!
 
     [Header("Visuals")]
     [Tooltip("Das Partikelsystem für die Energie-Nova")]

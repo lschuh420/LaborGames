@@ -12,7 +12,7 @@ public class LegIK : MonoBehaviour
     public Transform footTip;
     public Transform target;
 
-    [Header("Berechnete Längen")]
+    [Header("Berechnete LÃ¤ngen")]
     private float lengthFemur;
     private float lengthTibia;
 
@@ -53,10 +53,10 @@ public class LegIK : MonoBehaviour
         float targetDist = toTarget.magnitude;
         float maxLength = lengthFemur + lengthTibia;
 
-        // KRITISCHER FEHLER-LOG: Wenn der Fuß den Boden nicht erreichen kann
+        // KRITISCHER FEHLER-LOG: Wenn der FuÃŸ den Boden nicht erreichen kann
         if (enableDebugLogs && targetDist >= maxLength - 0.005f)
         {
-            Debug.LogWarning($"[LegIK] {gameObject.name} ÜBERDEHNT! Distanz zum Ziel: {targetDist}, Max. Bein-Länge: {maxLength}");
+            Debug.LogWarning($"[LegIK] {gameObject.name} ÃœBERDEHNT! Distanz zum Ziel: {targetDist}, Max. Bein-LÃ¤nge: {maxLength}");
         }
 
         targetDist = Mathf.Clamp(targetDist, 0.001f, maxLength - 0.001f);
@@ -79,4 +79,43 @@ public class LegIK : MonoBehaviour
         Quaternion kneeBend = Quaternion.FromToRotation(currentTibiaDir, targetTibiaDir);
         upperLeg.rotation = kneeBend * upperLeg.rotation;
     }
+
+#if UNITY_EDITOR
+    [Header("Presentation Visuals")]
+    [Tooltip("Aktivieren, um Bones, Gelenke und Ziel-Vektoren in der Scene View zu sehen")]
+    public bool showPresentationGizmos = false;
+
+    private void OnDrawGizmos()
+    {
+        if (!showPresentationGizmos) return;
+
+        if (hip != null && upperLeg != null && footTip != null && target != null)
+        {
+            // Bones (Oberschenkel & Unterschenkel)
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(hip.position, upperLeg.position);
+            Gizmos.DrawLine(upperLeg.position, footTip.position);
+
+            // Gelenke (Kugeln)
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(hip.position, 0.15f);
+            Gizmos.DrawWireSphere(upperLeg.position, 0.15f);
+            Gizmos.DrawWireSphere(footTip.position, 0.15f);
+
+            // Hypotenuse (HÃ¼fte zu IK Target)
+            Gizmos.color = new Color(1f, 0f, 0f, 0.5f);
+            Gizmos.DrawLine(hip.position, target.position);
+            
+            // Ziel-WÃ¼rfel
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireCube(target.position, Vector3.one * 0.2f);
+
+            // Beschriftungen
+            UnityEditor.Handles.color = Color.white;
+            UnityEditor.Handles.Label(hip.position + Vector3.up * 0.3f, "Hip");
+            UnityEditor.Handles.Label(upperLeg.position + Vector3.up * 0.3f, "Knee Joint (IK)");
+            UnityEditor.Handles.Label(target.position + Vector3.down * 0.3f, "IK Target");
+        }
+    }
+#endif
 }

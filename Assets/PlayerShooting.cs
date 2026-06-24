@@ -286,8 +286,8 @@ public class PlayerShooting : MonoBehaviour
         LaborProjectile laborBullet = bullet.GetComponent<LaborProjectile>();
         if (laborBullet != null)
         {
-            // Schaden des Prefabs beibehalten, aber den Player-Layer ausnehmen
-            laborBullet.Setup(laborBullet.damage, bulletSpeed, LayerMask.NameToLayer("Player"));
+            // Schaden explizit auf 25 setzen und den Player-Layer ausnehmen
+            laborBullet.Setup(25, bulletSpeed, LayerMask.NameToLayer("Player"));
         }
 
         // ====================================================================

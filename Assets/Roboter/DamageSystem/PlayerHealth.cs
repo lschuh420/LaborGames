@@ -11,7 +11,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     [Header("Regeneration")]
     [Tooltip("Sekunden ohne Treffer, bevor die Heilung startet")]
-    public float regenDelay = 20f;
+    public float regenDelay = 15f;
     [Tooltip("HP pro Sekunde während der Heilung (progressiv, nicht auf einmal)")]
     public float regenRate = 5f;
 

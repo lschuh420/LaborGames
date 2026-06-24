@@ -393,4 +393,40 @@ public class StepManager : MonoBehaviour
     }
 
     int GetActiveStepCount() { int c = 0; foreach (var l in legs) if (l.isSteppingActive && !l.isDestroyed) c++; return c; }
+
+#if UNITY_EDITOR
+    [Header("Presentation Visuals")]
+    [Tooltip("Zeichnet die Raycasts (Bodenfindung) aller Beine in der Scene View")]
+    public bool showRaycastGizmos = false;
+
+    private void OnDrawGizmos()
+    {
+        if (!showRaycastGizmos || legs == null) return;
+
+        for (int i = 0; i < legs.Count; i++)
+        {
+            if (legs[i].targetTransform == null || legs[i].isDestroyed) continue;
+            
+            // Raycast Ursprung berechnen
+            Vector3 restPos = GetIdealRestPosition(i);
+            Vector3 rayStart = restPos + Vector3.up * rayStartHeight;
+            
+            // Roter Strahl (Suche)
+            Gizmos.color = new Color(1f, 0f, 1f, 0.5f);
+            Gizmos.DrawLine(rayStart, rayStart + Vector3.down * rayDistance);
+            
+            // Trefferpunkt & Normale (Grün)
+            if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, rayDistance, groundLayer))
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(hit.point, 0.2f);
+                // Normale einzeichnen (zeigt die Ausrichtung des Bodens)
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawLine(hit.point, hit.point + hit.normal * 0.8f);
+                
+                UnityEditor.Handles.Label(hit.point + Vector3.up * 0.4f, $"Ground Hit [{i}]");
+            }
+        }
+    }
+#endif
 }
