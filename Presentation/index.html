@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>SPARC - Abschlusspräsentation</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css">
+    
+    <!-- Custom Theme -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Font: Rajdhani & Orbitron for Sci-Fi look -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title Slide -->
+            <section class="title-slide" data-transition="zoom">
+                <h1 class="glitch" data-text="SPARC">SPARC</h1>
+                <h3>The Boss-Fight Experience</h3>
+                <div class="spacer"></div>
+                <p class="subtitle">Lennard &middot; Barten &middot; Jakob</p>
+                <div class="scifi-line"></div>
+            </section>
+
+            <!-- Gameplay Live Demo Intro -->
+            <section data-transition="slide" data-background-color="#0a0a0f">
+                <h2>// INITIALIZING SYSTEM</h2>
+                <h1 class="accent">LIVE DEMO</h1>
+                <p class="big-text">SWITCH TO GAMEPLAY</p>
+            </section>
+
+            <!-- The Team -->
+            <section data-transition="convex">
+                <h2 class="section-title">THE ARCHITECTS</h2>
+                <div class="grid-layout">
+                    <div class="card">
+                        <h3 class="accent">LENNARD</h3>
+                        <p class="role">AI & Robotics</p>
+                    </div>
+                    <div class="card">
+                        <h3 class="accent">BARTEN</h3>
+                        <p class="role">Player Core</p>
+                    </div>
+                    <div class="card">
+                        <h3 class="accent">JAKOB</h3>
+                        <p class="role">World Design</p>
+                    </div>
+                </div>
+                <div class="image-placeholder" style="border: none; background: transparent; margin-top: 30px;">
+                    <img src="3.png" alt="Player Screenshot" style="border-radius: 10px; max-height: 250px; box-shadow: 0 0 20px rgba(255, 60, 0, 0.4);">
+                </div>
+                <div class="scifi-line-bottom"></div>
+            </section>
+
+            <!-- Tech Deep Dive: Robot & IK -->
+            <section data-transition="zoom" data-background-color="#050a12">
+                <h2 class="section-title">ROBOTICS & IK</h2>
+                <h1 class="massive-text">INVERSE<br>KINEMATICS</h1>
+                <p class="big-text accent">Procedural Adaptation & Raycasting</p>
+                <!-- Image Platzhalter für echte Screenshots -->
+                <div class="image-placeholder" style="border: none; background: transparent;">
+                    <img src="1.png" alt="Roboter Screenshot" style="border-radius: 10px; max-height: 400px; box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);">
+                </div>
+            </section>
+
+            <!-- Tech Deep Dive: AI -->
+            <section data-transition="slide">
+                <h2 class="section-title">BEHAVIOR DESIGNER</h2>
+                <h1 class="massive-text">CUSTOM<br>SCRIPTS</h1>
+                <p class="big-text accent">Modular AI State Machine</p>
+                <div class="image-placeholder" style="border: none; background: transparent; margin-top: 20px;">
+                    <img src="2.png" alt="Energy Shield Screenshot" style="border-radius: 10px; max-height: 350px; box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);">
+                </div>
+            </section>
+
+            <!-- Tech Deep Dive: Player & Environment -->
+            <section data-transition="convex" data-background-color="#0e0512">
+                <h2 class="section-title">PLAYER & WORLD</h2>
+                <div class="split-layout">
+                    <div class="split-left">
+                        <h1 class="accent">CINEMACHINE</h1>
+                        <p class="big-text">Dynamic Camera</p>
+                    </div>
+                    <div class="split-right">
+                        <h1 class="accent">PROBUILDER</h1>
+                        <p class="big-text">Rapid In-Engine Level Design</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Challenges / Learnings -->
+            <section data-transition="zoom" data-background-color="#120505">
+                <h2 class="section-title">THE STRUGGLE</h2>
+                <h1 class="massive-text">TRIAL & ERROR</h1>
+                <p class="big-text accent">From Unity Beginners to Functional IK</p>
+                <div class="scifi-line"></div>
+            </section>
+
+            <!-- What's Next / Future -->
+            <section data-transition="slide">
+                <h2 class="section-title">SYSTEM EXPANSION</h2>
+                <div class="split-layout">
+                    <div class="split-left">
+                        <h1 class="accent">AERIAL<br>THREATS</h1>
+                        <p class="big-text">Flying Mechs</p>
+                    </div>
+                    <div class="split-right">
+                        <h1 class="accent">DEEPER<br>CORE</h1>
+                        <p class="big-text">Expanded Player Mechanics</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Q&A / End -->
+            <section data-transition="fade" data-background-color="#050505">
+                <h1 class="glitch" data-text="SYSTEM HALT">SYSTEM HALT</h1>
+                <h3 class="accent">Q & A</h3>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            controls: false, // Cleaner Sci-Fi look
+            progress: true,
+            center: true,
+            transition: 'slide',
+            backgroundTransition: 'slide',
+            controlsTutorial: false
+        });
+    </script>
+</body>
+</html>

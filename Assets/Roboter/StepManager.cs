@@ -105,11 +105,7 @@ public class StepManager : MonoBehaviour
         bossHealth = GetComponentInParent<MechBossHealth>();
         if (bossHealth != null)
         {
-            MechBossHealth.OnLegDestroyed += (count) => {
-                destroyedCount = count;
-                // Sofort Panik-Schritte für alle Beine auslösen beim Stun
-                ForceSplaySteps();
-            };
+            MechBossHealth.OnLegDestroyed += HandleLegDestroyed;
         }
 
         SnapAllLegsToGround();
@@ -120,8 +116,18 @@ public class StepManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Da es ein statisches Event sein könnte oder wir sicher gehen wollen
-        // MechBossHealth.OnLegDestroyed -= ... (müsste eine Methode sein)
+        if (bossHealth != null)
+        {
+            MechBossHealth.OnLegDestroyed -= HandleLegDestroyed;
+        }
+    }
+
+    private void HandleLegDestroyed(int count)
+    {
+        if (this == null) return;
+        destroyedCount = count;
+        // Sofort Panik-Schritte für alle Beine auslösen beim Stun
+        ForceSplaySteps();
     }
 
     void Update()

@@ -64,27 +64,16 @@ public class MechLegHealth : MonoBehaviour
 
         Debug.Log("<color=orange>[LegHealth] BOOM! Bein weg!</color>");
 
-        // Bein-Zerstörung Sound (Lauter und präsenter!)
+        // Bein-Zerstörung Sound (wieder auf normale Lautstärke reduziert)
         if (legDestroyedSound != null)
         {
-            // 1. Eigener AudioSource spawnen, damit er laut genug ist (Halb 3D)
-            GameObject tempAudioObj = new GameObject("LegDestroySound_Loud");
-            tempAudioObj.transform.position = transform.position;
-            AudioSource tempSource = tempAudioObj.AddComponent<AudioSource>();
-            tempSource.clip = legDestroyedSound;
-            tempSource.volume = 1.0f; // Max volume
-            tempSource.spatialBlend = 0.5f; // Halb 2D für bessere Hörbarkeit
-            tempSource.minDistance = 15f;
-            tempSource.maxDistance = 100f;
-            tempSource.Play();
-            tempSource.PlayOneShot(legDestroyedSound, 1.0f); // Nochmals drüberlegen für extremen Punch
-            Destroy(tempAudioObj, legDestroyedSound.length + 0.5f);
-            
-            // 2. Zur Sicherheit auch nochmal den regulären abspielen (Stacking)
             if (audioSource != null)
             {
-                audioSource.PlayOneShot(legDestroyedSound, 1.0f);
-                audioSource.PlayOneShot(legDestroyedSound, 1.0f); // Noch eine Ebene!
+                audioSource.PlayOneShot(legDestroyedSound, audioVolume);
+            }
+            else
+            {
+                AudioSource.PlayClipAtPoint(legDestroyedSound, transform.position, audioVolume);
             }
         }
 
