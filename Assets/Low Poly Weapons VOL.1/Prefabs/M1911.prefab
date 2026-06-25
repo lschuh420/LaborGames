@@ -252,8 +252,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   weaponName: M1911
-  damage: 25
+  damage: 100
   fireRate: 0.2
+  magazineSize: 12
+  reloadTime: 1.5
+  currentAmmo: 0
+  overrideGripAlignment: 0
   gripPositionOffset: {x: 0, y: 0, z: 0}
   gripRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!65 &4932109205261509444
