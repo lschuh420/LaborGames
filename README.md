@@ -97,5 +97,5 @@ Aufbau der gesamten Spielwelt (Map, Umgebung, Beleuchtung, Atmosphäre).
 
 
 ## Video & Projekt-Link
-- **Video:** [Link zum Video]
+- **Video:** [Link zum Video](https://drive.google.com/file/d/1ApLz4zzQKtQK3OSSHhS8_yY8Gg9TX8ZT/view?usp=sharing)
 - **Projekt:** [GitHub Repository (LaborGames)](https://github.com/lschuh420/LaborGames)
