@@ -486,3 +486,14 @@
 "*.tif" 
 "Assets/Tim's Substances/" 
 "Assets/ASTROFISH_GAMES/" 
+
+# Removed clutter (keep out of the repo)
+.DS_Store
+**/.DS_Store
+.vscode/
+.vsconfig
+.gemini/
+context.txt
+allfiles.txt
+brainstorming.skill
+brainstorming/
